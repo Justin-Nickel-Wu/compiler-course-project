@@ -25,7 +25,7 @@ private:
     bool need_split(char ch1, char ch2){
         // aa *_  )a _(
         return (isalpha(ch1) && isalpha(ch2))
-                || (ch1 == '*') 
+                || ((ch1 == '*') && ch2 != ')') 
                 || (ch1 == ')' && isalpha(ch2))
                 || (ch2 == '(');
     }
@@ -106,18 +106,18 @@ public:
     }
 
     void print_regexp(){
-        cout << "Input Expression: " << regexp << endl;
+        cout << "输入正则表达式: " << regexp << endl;
     }
 
     void print_splited_regexp(){
-        cout << "Splited Expression: ";
+        cout << "分割后的表达式: ";
         for (auto ch : splited_regexp)
             cout << ch;
         cout << endl;
     }
 
     void print_postfix_regexp(){
-        cout << "Postfix Expression: ";
+        cout << "后缀表达式: ";
         for (auto ch : postfix_regexp)
             cout << ch;
         cout << endl;
@@ -126,13 +126,13 @@ public:
     void print_nfa(){
         cout << "NFA States: " << nfa_size << endl;
         for (int i = 0; i < nfa_size; i++){
-            cout << "State " << char(i + 'A') << ": ";
+            cout << "State " << i << ": ";
             for (int j = 0; j < 26; j++){
                 for (auto t : nfa[i].alpha[j])
-                    cout << "'" << char(j + 'a') << "' -> " << char(t + 'A') << "  ";
+                    cout << "'" << char(j + 'a') << "' -> " << t << "  ";
             }
             for (auto t : nfa[i].e)
-                cout << "ε -> " << char(t + 'A') << "  ";
+                cout << "ε -> " << t << "  ";
             cout << endl;
         }
     }
@@ -191,13 +191,15 @@ public:
         stack<int> sta;
         nfa.clear();
         nfa_size = 0;
-        for (auto ch : postfix_regexp)
+        for (auto ch : postfix_regexp){
+            cout << "! " << ch << endl;
             switch (ch){
                 case '*': closure(sta); break;
                 case '.': concat(sta); break;
                 case '|': union_(sta); break;
                 default: create_symbol(sta, ch);
             }
+        }
 
         int a, b;
         b = sta.top(), sta.pop();
@@ -205,12 +207,53 @@ public:
         nfa[b].is_final = 1; // 标记终态
         q0 = a;
     }
+
+    void export_to_png(){
+        ofstream out_dot("nfa.dot");
+        out_dot << "digraph NFA {\n";
+        out_dot << "    rankdir=LR;\n";
+        out_dot << "    node [shape=circle];\n";
+        out_dot << "\n";
+
+        for (int i = 0; i < nfa_size; i++){
+            out_dot << "    " << i + 1 << " [label=\"" << i + 1 << "\"";
+            if (nfa[i].is_final)
+                out_dot << ", peripheries=2];\n";
+            else
+                out_dot << "];\n";
+        }
+        out_dot << "\n";
+
+        out_dot << "    start [shape=point];\n";
+        out_dot << "    start -> " << q0 + 1 << ";\n";
+        out_dot << "\n";
+
+        for (int i = 0; i < nfa_size; i++){
+            for (int j = 0; j < 26; j++){
+                for (auto t : nfa[i].alpha[j]){
+                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
+                }
+            }
+            for (auto t : nfa[i].e){
+                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+            }
+        }
+        out_dot << "}" << endl;
+        out_dot.close();
+
+        system("dot -Tpng nfa.dot -o nfa.png");
+        // system("rm nfa.dot");
+        system("open nfa.png");
+    }
 };
 
 int main(){
-    freopen("in.txt", "r", stdin);
-    freopen("out.txt", "w", stdout);
-    while (cin >> input_str){
+    while (1){
+        cout << "请输入正则表达式 (输入 quit 结束): " << endl;
+        cin >> input_str;
+        if (input_str == "quit")
+            break;
+
         NFA nfa(input_str);
 
         nfa.print_regexp();
@@ -223,6 +266,8 @@ int main(){
 
         nfa.build_nfa();
         nfa.print_nfa();
+
+        nfa.export_to_png();
 
         cout << endl;
     }
