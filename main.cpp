@@ -5,9 +5,21 @@ string input_str;
 
 class NFA {
 private:
-    string regexp;
-    vector<char> splited_regexp;
-    vector<char> postfix_regexp;
+    struct NFA_node{
+        vector<int> alpha[26], e;
+        bool is_final = 0;
+    };
+
+    const NFA_node void_NFA_node;
+
+    int q0; // 起始状态
+
+    string regexp;               // 原始正则表达式
+    vector<char> splited_regexp; // 插入连接符后的正则表达式
+    vector<char> postfix_regexp; // 后缀表达式
+
+    vector<NFA_node> nfa;
+    int nfa_size;
 
     // 判断是否需要在两个字符之间插入连接符
     bool need_split(char ch1, char ch2){
@@ -18,7 +30,76 @@ private:
                 || (ch2 == '(');
     }
 
+    int op_priority(char op){
+        switch (op){
+            case '*' : return 3;
+            case '.' : return 2;
+            case '|' : return 1;
+            default  : return 0; // 括号优先级最低
+        }
+    }
+
+    // 添加一个字符的NFA片段
+    void create_symbol(stack<int> &sta, char ch){
+        nfa.push_back(void_NFA_node);
+        nfa.push_back(void_NFA_node);
+        nfa[nfa_size].alpha[ch - 'a'].push_back(nfa_size + 1); // 连边
+
+        sta.push(nfa_size), nfa_size++;
+        sta.push(nfa_size), nfa_size++;
+    }
+
+    // 处理｜操作符
+    void union_(stack<int> &sta){
+        int a, b, x, y;
+        y = sta.top(), sta.pop();
+        x = sta.top(), sta.pop();
+        b = sta.top(), sta.pop();
+        a = sta.top(), sta.pop();
+
+        nfa.push_back(void_NFA_node);
+        nfa.push_back(void_NFA_node);
+
+        nfa[nfa_size].e.push_back(x);
+        nfa[nfa_size].e.push_back(a);
+        nfa[y].e.push_back(nfa_size + 1);
+        nfa[b].e.push_back(nfa_size + 1);
+
+        sta.push(nfa_size), nfa_size++;
+        sta.push(nfa_size), nfa_size++;
+    }
+
+    // 处理.操作符
+    void concat(stack<int> &sta){
+        int a, b, x, y;
+        y = sta.top(), sta.pop();
+        x = sta.top(), sta.pop();
+        b = sta.top(), sta.pop();
+        a = sta.top(), sta.pop();
+
+        nfa[b].e.push_back(x); // 注意顺序
+        sta.push(a);
+        sta.push(y);
+    }
+
+    // 处理*操作符
+    void closure(stack<int> &sta){
+        int a, b;
+        b = sta.top(), sta.pop();
+        a = sta.top(), sta.pop();
+
+        nfa.push_back(void_NFA_node);
+
+        nfa[b].e.push_back(a);
+        nfa[nfa_size].e.push_back(a);
+        nfa[nfa_size].e.push_back(b);
+
+        sta.push(nfa_size), nfa_size++;
+        sta.push(b);
+    }
+
 public:
+
     NFA(const string &input_str){
         regexp = input_str;
         splited_regexp.clear();
@@ -42,6 +123,20 @@ public:
         cout << endl;
     }
 
+    void print_nfa(){
+        cout << "NFA States: " << nfa_size << endl;
+        for (int i = 0; i < nfa_size; i++){
+            cout << "State " << char(i + 'A') << ": ";
+            for (int j = 0; j < 26; j++){
+                for (auto t : nfa[i].alpha[j])
+                    cout << "'" << char(j + 'a') << "' -> " << char(t + 'A') << "  ";
+            }
+            for (auto t : nfa[i].e)
+                cout << "ε -> " << char(t + 'A') << "  ";
+            cout << endl;
+        }
+    }
+
     // 分割正则表达式，插入连接符
     void split_input_regexp(){
         char nowc, nextc;
@@ -53,15 +148,6 @@ public:
                 if (need_split(nowc, nextc))
                     splited_regexp.push_back('.');
             }
-        }
-    }
-
-    int op_priority(char op){
-        switch (op){
-            case '*' : return 3;
-            case '.' : return 2;
-            case '|' : return 1;
-            default  : return 0; // 括号优先级最低
         }
     }
     
@@ -99,6 +185,26 @@ public:
             op_stack.pop();
         }
     }
+
+    // 由后缀表达式构建NFA
+    void build_nfa(){
+        stack<int> sta;
+        nfa.clear();
+        nfa_size = 0;
+        for (auto ch : postfix_regexp)
+            switch (ch){
+                case '*': closure(sta); break;
+                case '.': concat(sta); break;
+                case '|': union_(sta); break;
+                default: create_symbol(sta, ch);
+            }
+
+        int a, b;
+        b = sta.top(), sta.pop();
+        a = sta.top(), sta.pop();
+        nfa[b].is_final = 1; // 标记终态
+        q0 = a;
+    }
 };
 
 int main(){
@@ -114,6 +220,9 @@ int main(){
 
         nfa.build_postfix_regexp();
         nfa.print_postfix_regexp();
+
+        nfa.build_nfa();
+        nfa.print_nfa();
 
         cout << endl;
     }
