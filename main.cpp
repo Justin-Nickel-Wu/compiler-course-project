@@ -25,7 +25,7 @@ private:
     bool need_split(char ch1, char ch2){
         // aa *_  )a _(
         return (isalpha(ch1) && isalpha(ch2))
-                || ((ch1 == '*') && ch2 != ')') 
+                || ((ch1 == '*') && ch2 != ')' && ch2 != '|') 
                 || (ch1 == ')' && isalpha(ch2))
                 || (ch2 == '(');
     }
@@ -213,6 +213,10 @@ public:
         out_dot << "digraph NFA {\n";
         out_dot << "    rankdir=LR;\n";
         out_dot << "    node [shape=circle];\n";
+        out_dot << "   label = \"" + regexp + " NFA示意图\";\n";
+        out_dot << "   labelloc = \"t\";\n";
+        out_dot << "   fontsize = 20;\n";
+        out_dot << "   fontname = \"Helvetica-Bold\";\n";
         out_dot << "\n";
 
         for (int i = 0; i < nfa_size; i++){
