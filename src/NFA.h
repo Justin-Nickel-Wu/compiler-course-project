@@ -10,15 +10,10 @@ class NFA {
     friend class DFA;
 
 private:
-    typedef GraphStruct::NodeType NFA_node;
-    const NFA_node void_NFA_node;
-
-    int q0; // 起始状态
     string regexp;               // 原始正则表达式
     vector<char> splited_regexp; // 插入连接符后的正则表达式
     vector<char> postfix_regexp; // 后缀表达式
-    vector<NFA_node> nfa;
-    int nfa_size;
+    GraphStruct nfa;
 
     bool need_split(char ch1, char ch2); // 判断是否需要在两个字符之间插入连接符
     int op_priority(char op);

@@ -26,12 +26,12 @@ int NFA::op_priority(char op){
 }
 
 void NFA::create_symbol(stack<int> &sta, char ch){
-    nfa.push_back(void_NFA_node);
-    nfa.push_back(void_NFA_node);
-    nfa[nfa_size].alpha[ch - 'a'].push_back(nfa_size + 1); // 连边
+    nfa.add_void_node();
+    nfa.add_void_node();
+    nfa.add_edge(nfa.size() - 2, nfa.size() - 1, ch); // 连边
 
-    sta.push(nfa_size), nfa_size++;
-    sta.push(nfa_size), nfa_size++;
+    sta.push(nfa.size() - 2);
+    sta.push(nfa.size() - 1);
 }
 
 void NFA::union_(stack<int> &sta){
@@ -41,16 +41,16 @@ void NFA::union_(stack<int> &sta){
     b = sta.top(), sta.pop();
     a = sta.top(), sta.pop();
 
-    nfa.push_back(void_NFA_node);
-    nfa.push_back(void_NFA_node);
+    nfa.add_void_node();
+    nfa.add_void_node();
 
-    nfa[nfa_size].e.push_back(x);
-    nfa[nfa_size].e.push_back(a);
-    nfa[y].e.push_back(nfa_size + 1);
-    nfa[b].e.push_back(nfa_size + 1);
+    nfa.add_edge(nfa.size() - 2, x);
+    nfa.add_edge(nfa.size() - 2, a);
+    nfa.add_edge(y, nfa.size() - 1);
+    nfa.add_edge(b, nfa.size() - 1);
 
-    sta.push(nfa_size), nfa_size++;
-    sta.push(nfa_size), nfa_size++;
+    sta.push(nfa.size() - 2);
+    sta.push(nfa.size() - 1);
 }
 
 void NFA::concat(stack<int> &sta){
@@ -60,7 +60,7 @@ void NFA::concat(stack<int> &sta){
     b = sta.top(), sta.pop();
     a = sta.top(), sta.pop();
 
-    nfa[b].e.push_back(x); // 注意顺序
+    nfa.add_edge(b, x); // 注意顺序
     sta.push(a);
     sta.push(y);
 }
@@ -70,13 +70,11 @@ void NFA::closure(stack<int> &sta){
     b = sta.top(), sta.pop();
     a = sta.top(), sta.pop();
 
-    nfa.push_back(void_NFA_node);
-
-    nfa[b].e.push_back(a);
-    nfa[nfa_size].e.push_back(a);
-    nfa[nfa_size].e.push_back(b);
-
-    sta.push(nfa_size), nfa_size++;
+    nfa.add_void_node();
+    nfa.add_edge(b, a);
+    nfa.add_edge(nfa.size() - 1, a);
+    nfa.add_edge(nfa.size() - 1, b);
+    sta.push(nfa.size() - 1);
     sta.push(b);
 }
 
@@ -105,21 +103,21 @@ void NFA::print_postfix_regexp(){
 }
 
 void NFA::print_nfa(){
-    cout << "NFA States: " << nfa_size << endl;
-    for (int i = 0; i < nfa_size; i++){
+    cout << "NFA States: " << nfa.size() << endl;
+    for (int i = 0; i < nfa.size(); i++){
         cout << "State " << i << ": ";
         for (int j = 0; j < 26; j++){
-            for (auto t : nfa[i].alpha[j])
+            for (auto t : nfa.to(i, char(j + 'a')))
                 cout << "'" << char(j + 'a') << "' -> " << t << "  ";
         }
-        for (auto t : nfa[i].e)
+        for (auto t : nfa.to(i))
             cout << "ε -> " << t << "  ";
         cout << endl;
     }
 }
 
 void NFA::export_to_png(){
-    GraphStruct::export_to_png(&nfa, q0, nfa_size, "NFA示意图", 1);
+    nfa.export_to_png("NFA示意图", 1);
 }
 
 void NFA::split_input_regexp(){
@@ -171,8 +169,6 @@ void NFA::build_postfix_regexp(){
 
 void NFA::build_nfa(){
     stack<int> sta;
-    nfa.clear();
-    nfa_size = 0;
     for (auto ch : postfix_regexp){
         // cout << "! " << ch << endl;
         switch (ch){
@@ -185,6 +181,6 @@ void NFA::build_nfa(){
     int a, b;
     b = sta.top(), sta.pop();
     a = sta.top(), sta.pop();
-    nfa[b].is_final = 1; // 标记终态
-    q0 = a;
+    nfa.make_final(b); // 标记终态
+    nfa.make_q0(a);
 }

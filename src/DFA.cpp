@@ -5,7 +5,7 @@ using namespace std;
 
 void DFA::get_epsilon_closure(int s, Closure &S){
     // cout << "epsilon: " << s << ' ' << (*nfa)[s].e.size() << ' ' << (*nfa).size() << endl;
-    for (auto i: (*nfa)[s].e){
+    for (auto i: nfa->to(s)){
         // cout << "! " << i <<endl;
         if (S.count(i) == 0){
             S.insert(i);
@@ -16,36 +16,36 @@ void DFA::get_epsilon_closure(int s, Closure &S){
 
 DFA::DFA(class NFA &nfa){
     this->nfa = &nfa.nfa;
-    this->nfa_size = nfa.nfa_size;
-    this->nfa_q0 = nfa.q0;
+    this->dfa.make_q0(nfa.nfa.get_q0());
 }
 
 void DFA::export_to_png(){
-    GraphStruct::export_to_png(&dfa, dfa_q0, dfa_size, "DFA示意图");
+    dfa.export_to_png("DFA示意图");
 }
 
 void DFA::export_to_png_mini(){
-    GraphStruct::export_to_png(&mini_dfa, mini_dfa_q0, mini_dfa_size, "最小化DFA示意图");
+    mini_dfa.export_to_png("最小化DFA示意图");
 }
 
 void DFA::build_dfa(){
     map<Closure, int> idx; // 状态集合到DFA状态编号的映射
     idx.clear();
     queue<Closure> q;
-    dfa_size = 0;
 
     // cout << "Step 1" << endl;
-    // 初始e闭包
     Closure start_closure;
-    start_closure.insert(nfa_q0);
-    get_epsilon_closure(nfa_q0, start_closure);
-    dfa_q0 = idx[start_closure] = dfa_size++;
+
+    start_closure.insert(nfa->get_q0()); // 初始e闭包 
+    get_epsilon_closure(nfa->get_q0(), start_closure);
     q.push(start_closure);
 
-    dfa.push_back(void_DFA_node); // 添加第一个dfa节点，并判断是不是接受节点
+    dfa.add_void_node(); // 添加第一个dfa节点，并判断是不是接受节点
+    dfa.make_q0(0);
+    idx[start_closure] = 0;
+    
     for (auto i: start_closure)
-        if ((*nfa)[i].is_final){
-            dfa[0].is_final = 1;
+        if (nfa->is_final(i)){
+            dfa.make_final(0);
             break;
         }
     // cout << "Step 2" << endl;
@@ -61,19 +61,19 @@ void DFA::build_dfa(){
         for (int j = 0; j < 26; j++){
             Closure next;
             for (auto i: now) // 构建新的闭包
-                for (auto k: (*nfa)[i].alpha[j]){
+                for (auto k: nfa->to(i, char(j + 'a'))){
                     next.insert(k);
                     get_epsilon_closure(k, next);
                 }
             if (!next.empty() && idx.count(next) == 0){
                 q.push(next);
-                dfa.push_back(void_DFA_node); // 添加第一个dfa节点，并判断是不是接受节点
+                dfa.add_void_node(); // 添加第一个dfa节点，并判断是不是接受节点
                 for (auto i: next)
-                    if ((*nfa)[i].is_final){
-                        dfa[dfa_size].is_final = 1;
+                    if (nfa->is_final(i)){
+                        dfa.make_final(dfa.size() - 1);
                         break;
                     }
-                idx[next] = dfa_size++;
+                idx[next] = dfa.size() - 1;
             }
             // cout << "Step 5" << endl;
             // cout << "Next: " << next.size() << endl;
@@ -84,7 +84,7 @@ void DFA::build_dfa(){
             if (!next.empty()){
                 int next_id = idx[next];
                 // cout << "next_id: " << next_id << endl;
-                dfa[now_id].alpha[j].push_back(next_id); 
+                dfa.add_edge(now_id, next_id, char(j + 'a')); 
                 // cout << now_id << "-" << char(j + 'a') << "->" << next_id << endl;
             }
         }
@@ -93,10 +93,10 @@ void DFA::build_dfa(){
 
 void DFA::minimize_dfa(){
     // cout << "Step1" << endl;
-    vector<int> tag(dfa_size);
+    vector<int> tag(dfa.size());
     int tag_nums = 0;
-    for (int i = 0; i < dfa_size; i++)
-        if (dfa[i].is_final) // 存在所有节点都可接受的可能性！
+    for (int i = 0; i < dfa.size(); i++)
+        if (dfa.is_final(i)) // 存在所有节点都可接受的可能性！
             tag[i] = 0;
         else {
             tag[i] = 1;
@@ -118,7 +118,7 @@ void DFA::minimize_dfa(){
         changed = 0;
         for (int t = 0; t <= tag_nums; t++){
             vector<int> S;
-            for (int i = 0; i < dfa_size; i++)
+            for (int i = 0; i < dfa.size(); i++)
                 if (tag[i] == t)
                     S.push_back(i);
             if (S.size() <= 1) // 少于一个就不需要继续啦
@@ -126,13 +126,13 @@ void DFA::minimize_dfa(){
 
             set<int> first; // 找出第一个节点的转移情况
             for (int j = 0; j < 26; j++)
-                for (auto k: dfa[S[0]].alpha[j])
+                for (auto k: dfa.to(S[0], char(j + 'a')))
                     first.insert(tag[k]);
 
             for (int i = 1; i < S.size(); i++){
                 set<int> now;
                 for (int j = 0; j < 26; j++)
-                    for (auto k: dfa[S[i]].alpha[j])
+                    for (auto k: dfa.to(S[i], char(j + 'a')))
                         now.insert(tag[k]);
                 if (now != first){ // 不等价，标记为新tag
                     if (!changed){
@@ -149,22 +149,21 @@ void DFA::minimize_dfa(){
 
 
     // 开始连边
-    mini_dfa.clear();
-    mini_dfa_size = tag_nums + 1;
-    mini_dfa_q0 = tag[dfa_q0];
-    mini_dfa.resize(mini_dfa_size, void_DFA_node);
+
+    mini_dfa.make_q0(tag[dfa.get_q0()]);
+    mini_dfa.resize(tag_nums + 1);
     // cout << "Step3" << endl;
     // cout << "Mini DFA Size: " << tag_nums + 1 << endl;
     set<pair<pair<int, int>, int>> exist_edge; // 去重边
-    for (int i = 0; i < dfa_size; i++){
-        if (dfa[i].is_final)
-            mini_dfa[tag[i]].is_final = 1;
+    for (int i = 0; i < dfa.size(); i++){
+        if (dfa.is_final(i))
+            mini_dfa.make_final(tag[i]);
         for (int j = 0; j < 26; j++){
-            for (auto k: dfa[i].alpha[j]){
+            for (auto k: dfa.to(i, char(j + 'a'))){
                 if (!exist_edge.count({{tag[i], tag[k]}, j})){
                     // cout << "Mini Edge: " << tag[i] << "-" << char(j + 'a') << "->" << tag[k] << endl;
                     // cout << "From " << i << " " << k << endl;
-                    mini_dfa[tag[i]].alpha[j].push_back(tag[k]);
+                    mini_dfa.add_edge(tag[i], tag[k], char(j + 'a'));
                     exist_edge.insert({{tag[i], tag[k]}, j});
                     // cout << "end" << endl;
                 }

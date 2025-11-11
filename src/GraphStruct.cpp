@@ -5,7 +5,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, string title, bool is_nfa){
+void GraphStruct::export_to_png(string title, bool is_nfa){
     ofstream out_dot("./output/" + title +".dot");
     out_dot << "digraph NFA {\n";
     out_dot << "    rankdir=LR;\n";
@@ -16,9 +16,9 @@ void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, strin
     out_dot << "    fontname = \"Helvetica-Bold\";\n";
     out_dot << "\n";
 
-    for (int i = 0; i < size; i++){
+    for (int i = 0; i < g.size(); i++){
         out_dot << "    " << i + 1 << " [label=\"" << i + 1 << "\"";
-        if ((*input)[i].is_final)
+        if (g[i].is_final)
             out_dot << ", peripheries=2];\n";
         else
             out_dot << "];\n";
@@ -26,17 +26,17 @@ void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, strin
     out_dot << "\n";
 
     out_dot << "    start [shape=point];\n";
-    out_dot << "    start -> " << q0 + 1 << ";\n";
+    out_dot << "    start -> " << get_q0() + 1 << ";\n";
     out_dot << "\n";
 
-    for (int i = 0; i < size; i++){
+    for (int i = 0; i < g.size(); i++){
         for (int j = 0; j < 26; j++){
-            for (auto t : (*input)[i].alpha[j]){
+            for (auto t : g[i].alpha[j]){
                 out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
             }
         }
         if (is_nfa){
-            for (auto t : (*input)[i].e){
+            for (auto t : g[i].e){
                 out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
             }
         }
@@ -47,6 +47,17 @@ void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, strin
     system(("dot -Tpng ./output/" + title + ".dot -o ./output/" + title + ".png").c_str());
     // system(("rm ./output/" + title + ".dot").c_str());
     // system(("open ./output/" + title + ".png").c_str());
+}
+
+void GraphStruct::add_edge(int from, int to, char w){
+    if (w == '\0')
+        g[from].e.push_back(to);
+    else
+        g[from].alpha[w - 'a'].push_back(to);
+}
+
+vector<int>& GraphStruct::to(int from, char w){
+    return w == '\0' ? g[from].e : g[from].alpha[w - 'a'];
 }
 
 #endif

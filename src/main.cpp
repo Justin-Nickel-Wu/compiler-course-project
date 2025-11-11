@@ -31,7 +31,7 @@ int main(){
 
         dfa.minimize_dfa();
         dfa.export_to_png_mini();
-        
+
         cout << endl;
     }
     return 0;
