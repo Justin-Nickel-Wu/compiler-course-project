@@ -3,13 +3,22 @@ using namespace std;
 
 string input_str;
 
-class NFA {
-private:
-    struct NFA_node{
+
+class Node{
+public:
+    struct NodeType{
         vector<int> alpha[26], e;
         bool is_final = 0;
     };
+};
 
+class NFA {
+    
+    friend class DFA;
+
+private:
+
+    typedef Node::NodeType NFA_node;
     const NFA_node void_NFA_node;
 
     int q0; // 起始状态
@@ -249,6 +258,79 @@ public:
         // system("rm nfa.dot");
         system("open nfa.png");
     }
+};
+
+class DFA {
+private:
+    typedef Node::NodeType DFA_node;
+    typedef set<int> Closure; // 存储一个状态集合
+
+    vector<DFA_node> *nfa;
+    int nfa_size, nfa_q0;
+    vector<DFA_node> dfa;
+    int dfa_size;
+
+    // 由s开始推广epsilon闭包，避免每次扫描set结构
+    void get_epsilon_closure(int s, Closure &S){
+        for (auto i: (*nfa)[s].e)
+            if (S.count(i) == 0){
+                S.insert(i);
+                get_epsilon_closure(i, S);
+            }
+    } 
+
+public:
+    DFA(class NFA nfa){
+        this->nfa = &nfa.nfa;
+        this->nfa_size = nfa.nfa_size;
+        this->nfa_q0 = nfa.q0;
+    }
+
+    void build_dfa(){
+        map<Closure, int> idx; // 状态集合到DFA状态编号的映射
+        idx.clear();
+        queue<Closure> q;
+        int dfa_size = 0;
+
+        // 初始e闭包
+        Closure start_closure;
+        get_epsilon_closure(nfa_q0, start_closure);
+        idx[start_closure] = ++dfa_size;
+        q.push(start_closure);
+
+        while (!q.empty()){
+            Closure now = q.front();
+            q.pop();
+            int now_id = idx[now];
+
+            for (int j = 0; j < 26; j++){
+                Closure next;
+                for (auto i: now) // 构建新的闭包
+                    for (auto k: (*nfa)[i].alpha[j]){
+                        next.insert(k);
+                        get_epsilon_closure(k, next);
+                    }
+                if (!next.empty() && idx.count(next) == 0){
+                    q.push(next);
+                    idx[next] = ++dfa_size;
+                }
+
+                // 连边并标记最终节点
+                if (!next.empty()){
+                    int next_id = idx[next];
+                    dfa[now_id].alpha[j].push_back(next_id);
+
+                    dfa[next_id].is_final = 0;
+                    for (auto i: next)
+                        if ((*nfa)[i].is_final){
+                            dfa[next_id].is_final = 1;
+                            break;
+                        }
+                }
+            }
+        }
+    }
+
 };
 
 int main(){
