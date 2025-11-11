@@ -16,13 +16,17 @@ private:
     int nfa_size, nfa_q0;
     vector<DFA_node> dfa;
     int dfa_size, dfa_q0;
+    vector<DFA_node> mini_dfa;
+    int mini_dfa_size, mini_dfa_q0;
     
     void get_epsilon_closure(int s, Closure &S); // 由s开始推广epsilon闭包，避免每次扫描set结构
 
 public:
     DFA(class NFA &nfa);
     void export_to_png();
-    void build_dfa();
+    void export_to_png_mini();
+    void build_dfa(); // 构建DFA
+    void minimize_dfa(); // 最小化DFA
 };
 
 #endif
