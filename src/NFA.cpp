@@ -5,11 +5,15 @@
 using namespace std;
 
 bool NFA::need_split(char ch1, char ch2){
-        // aa *_  )a _(
-        return (isalpha(ch1) && isalpha(ch2))
-                || ((ch1 == '*') && ch2 != ')' && ch2 != '|') 
-                || (ch1 == ')' && isalpha(ch2))
-                || (ch2 == '(');
+        //  a * | ( )
+        //a T     T
+        //* T     T
+        //|       
+        //( 
+        //) T     T
+        return (isalpha(ch1) && (isalpha(ch2) || ch2 == '(')) 
+            || ((ch1 == '*') && (isalpha(ch2) || ch2 == '('))
+            || (ch1 == ')' && (isalpha(ch2) || ch2 == '('));
     }
 
 int NFA::op_priority(char op){

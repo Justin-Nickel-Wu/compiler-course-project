@@ -45,8 +45,8 @@ void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, strin
     out_dot.close();
 
     system(("dot -Tpng ./output/" + title + ".dot -o ./output/" + title + ".png").c_str());
-    system(("rm ./output/" + title + ".dot").c_str());
-    system(("open ./output/" + title + ".png").c_str());
+    // system(("rm ./output/" + title + ".dot").c_str());
+    // system(("open ./output/" + title + ".png").c_str());
 }
 
 #endif
