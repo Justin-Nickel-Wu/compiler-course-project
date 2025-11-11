@@ -94,16 +94,27 @@ void DFA::build_dfa(){
 void DFA::minimize_dfa(){
     // cout << "Step1" << endl;
     vector<int> tag(dfa_size);
-    int tag_nums = 1;
+    int tag_nums = 0;
     for (int i = 0; i < dfa_size; i++)
-        tag[i] = dfa[i].is_final ? 1 : 0;
-
+        if (dfa[i].is_final) // 存在所有节点都可接受的可能性！
+            tag[i] = 0;
+        else {
+            tag[i] = 1;
+            tag_nums = 1;
+        }
     // 大致思路：枚举tag（相当于某个状态集合），找出它们对应哪些节点，放入S
     // 把S中和第一节点不等价的节点全部标记为新tag
     // 重复执行
     // cout << "Step2" << endl;
     bool changed = 1;
     while (changed){
+        // cout << "tag" << endl;
+        // for (int i = 0; i < dfa_size; i++)
+        //     cout << i + 1 << ' ';
+        // cout << endl;
+        // for (int i = 0; i < dfa_size; i++)
+        //     cout << tag[i] + 1 << ' ';
+        // cout << endl;
         changed = 0;
         for (int t = 0; t <= tag_nums; t++){
             vector<int> S;
@@ -150,7 +161,7 @@ void DFA::minimize_dfa(){
             mini_dfa[tag[i]].is_final = 1;
         for (int j = 0; j < 26; j++){
             for (auto k: dfa[i].alpha[j]){
-                if (tag[i] != tag[k] && !exist_edge.count({{tag[i], tag[k]}, j})){
+                if (!exist_edge.count({{tag[i], tag[k]}, j})){
                     // cout << "Mini Edge: " << tag[i] << "-" << char(j + 'a') << "->" << tag[k] << endl;
                     // cout << "From " << i << " " << k << endl;
                     mini_dfa[tag[i]].alpha[j].push_back(tag[k]);
