@@ -109,11 +109,11 @@ void DFA::minimize_dfa(){
     bool changed = 1;
     while (changed){
         // cout << "tag" << endl;
-        // for (int i = 0; i < dfa_size; i++)
+        // for (int i = 0; i < dfa.size(); i++)
         //     cout << i + 1 << ' ';
         // cout << endl;
-        // for (int i = 0; i < dfa_size; i++)
-        //     cout << tag[i] + 1 << ' ';
+        // for (int i = 0; i < dfa.size(); i++)
+        //     cout << tag[i] << ' ';
         // cout << endl;
         changed = 0;
         for (int t = 0; t <= tag_nums; t++){
@@ -126,14 +126,25 @@ void DFA::minimize_dfa(){
 
             set<int> first; // 找出第一个节点的转移情况
             for (int j = 0; j < 26; j++)
-                for (auto k: dfa.to(S[0], char(j + 'a')))
+                for (auto k: dfa.to(S[0], char(j + 'a'))){
+                    // cout << "K: " << tag[k] << endl;
                     first.insert(tag[k]);
-
+                }
+            // cout << S[0] << ' ' << S[1] << endl;
             for (int i = 1; i < S.size(); i++){
                 set<int> now;
-                for (int j = 0; j < 26; j++)
-                    for (auto k: dfa.to(S[i], char(j + 'a')))
+                for (int j = 0; j < 26; j++){
+                    if (dfa.to(S[0], char(j + 'a')).empty() ^ dfa.to(S[i], char(j + 'a')).empty()){
+                        now.insert(-1); // 如果有一条边而另一条没有，直接标记为不等价
+                        break;
+                    }
+
+                    for (auto k: dfa.to(S[i], char(j + 'a'))){
+                        // cout << "next's K: " << k << endl;
                         now.insert(tag[k]);
+                    }
+                }
+                    
                 if (now != first){ // 不等价，标记为新tag
                     if (!changed){
                         ++tag_nums;
