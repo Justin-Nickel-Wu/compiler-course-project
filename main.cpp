@@ -3,13 +3,54 @@ using namespace std;
 
 string input_str;
 
-
-class Node{
+class GraphStruct{
 public:
     struct NodeType{
         vector<int> alpha[26], e;
         bool is_final = 0;
     };
+
+    static void export_to_png(vector<NodeType>* input, int q0, int size, string title = ""){
+        ofstream out_dot(title +".dot");
+        out_dot << "digraph NFA {\n";
+        out_dot << "    rankdir=LR;\n";
+        out_dot << "    node [shape=circle];\n";
+        out_dot << "    label = \""<<title<<"\";\n";
+        out_dot << "    labelloc = \"t\";\n";
+        out_dot << "    fontsize = 20;\n";
+        out_dot << "    fontname = \"Helvetica-Bold\";\n";
+        out_dot << "\n";
+
+        for (int i = 0; i < size; i++){
+            out_dot << "    " << i + 1 << " [label=\"" << i + 1 << "\"";
+            if ((*input)[i].is_final)
+                out_dot << ", peripheries=2];\n";
+            else
+                out_dot << "];\n";
+        }
+        out_dot << "\n";
+
+        out_dot << "    start [shape=point];\n";
+        out_dot << "    start -> " << q0 + 1 << ";\n";
+        out_dot << "\n";
+
+        for (int i = 0; i < size; i++){
+            for (int j = 0; j < 26; j++){
+                for (auto t : (*input)[i].alpha[j]){
+                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
+                }
+            }
+            for (auto t : (*input)[i].e){
+                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+            }
+        }
+        out_dot << "}" << endl;
+        out_dot.close();
+
+        system(("dot -Tpng " + title + ".dot -o " + title + ".png").c_str());
+        // system(("rm " + title + ".dot").c_str());
+        system(("open " + title + ".png").c_str());
+    }
 };
 
 class NFA {
@@ -18,7 +59,7 @@ class NFA {
 
 private:
 
-    typedef Node::NodeType NFA_node;
+    typedef GraphStruct::NodeType NFA_node;
     const NFA_node void_NFA_node;
 
     int q0; // 起始状态
@@ -146,6 +187,10 @@ public:
         }
     }
 
+    void export_to_png(){
+        GraphStruct::export_to_png(&nfa, q0, nfa_size, "NFA示意图");
+    }
+
     // 分割正则表达式，插入连接符
     void split_input_regexp(){
         char nowc, nextc;
@@ -216,53 +261,11 @@ public:
         nfa[b].is_final = 1; // 标记终态
         q0 = a;
     }
-
-    void export_to_png(){
-        ofstream out_dot("nfa.dot");
-        out_dot << "digraph NFA {\n";
-        out_dot << "    rankdir=LR;\n";
-        out_dot << "    node [shape=circle];\n";
-        out_dot << "   label = \"" + regexp + " NFA示意图\";\n";
-        out_dot << "   labelloc = \"t\";\n";
-        out_dot << "   fontsize = 20;\n";
-        out_dot << "   fontname = \"Helvetica-Bold\";\n";
-        out_dot << "\n";
-
-        for (int i = 0; i < nfa_size; i++){
-            out_dot << "    " << i + 1 << " [label=\"" << i + 1 << "\"";
-            if (nfa[i].is_final)
-                out_dot << ", peripheries=2];\n";
-            else
-                out_dot << "];\n";
-        }
-        out_dot << "\n";
-
-        out_dot << "    start [shape=point];\n";
-        out_dot << "    start -> " << q0 + 1 << ";\n";
-        out_dot << "\n";
-
-        for (int i = 0; i < nfa_size; i++){
-            for (int j = 0; j < 26; j++){
-                for (auto t : nfa[i].alpha[j]){
-                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
-                }
-            }
-            for (auto t : nfa[i].e){
-                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
-            }
-        }
-        out_dot << "}" << endl;
-        out_dot.close();
-
-        system("dot -Tpng nfa.dot -o nfa.png");
-        // system("rm nfa.dot");
-        system("open nfa.png");
-    }
 };
 
 class DFA {
 private:
-    typedef Node::NodeType DFA_node;
+    typedef GraphStruct::NodeType DFA_node;
     typedef set<int> Closure; // 存储一个状态集合
 
     vector<DFA_node> *nfa;
@@ -290,7 +293,7 @@ public:
         map<Closure, int> idx; // 状态集合到DFA状态编号的映射
         idx.clear();
         queue<Closure> q;
-        int dfa_size = 0;
+        dfa_size = 0;
 
         // 初始e闭包
         Closure start_closure;
