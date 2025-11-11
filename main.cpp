@@ -10,7 +10,7 @@ public:
         bool is_final = 0;
     };
 
-    static void export_to_png(vector<NodeType>* input, int q0, int size, string title = ""){
+    static void export_to_png(vector<NodeType>* input, int q0, int size, string title = "", bool is_nfa = 0){
         ofstream out_dot(title +".dot");
         out_dot << "digraph NFA {\n";
         out_dot << "    rankdir=LR;\n";
@@ -40,8 +40,10 @@ public:
                     out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
                 }
             }
-            for (auto t : (*input)[i].e){
-                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+            if (is_nfa){
+                for (auto t : (*input)[i].e){
+                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+                }
             }
         }
         out_dot << "}" << endl;
@@ -188,7 +190,7 @@ public:
     }
 
     void export_to_png(){
-        GraphStruct::export_to_png(&nfa, q0, nfa_size, "NFA示意图");
+        GraphStruct::export_to_png(&nfa, q0, nfa_size, "NFA示意图", 1);
     }
 
     // 分割正则表达式，插入连接符
@@ -246,7 +248,7 @@ public:
         nfa.clear();
         nfa_size = 0;
         for (auto ch : postfix_regexp){
-            cout << "! " << ch << endl;
+            // cout << "! " << ch << endl;
             switch (ch){
                 case '*': closure(sta); break;
                 case '.': concat(sta); break;
@@ -265,28 +267,38 @@ public:
 
 class DFA {
 private:
+
     typedef GraphStruct::NodeType DFA_node;
     typedef set<int> Closure; // 存储一个状态集合
+    const DFA_node void_DFA_node;
 
     vector<DFA_node> *nfa;
     int nfa_size, nfa_q0;
     vector<DFA_node> dfa;
-    int dfa_size;
+    int dfa_size, dfa_q0;
 
     // 由s开始推广epsilon闭包，避免每次扫描set结构
     void get_epsilon_closure(int s, Closure &S){
-        for (auto i: (*nfa)[s].e)
+        // cout << "epsilon: " << s << ' ' << (*nfa)[s].e.size() << ' ' << (*nfa).size() << endl;
+        for (auto i: (*nfa)[s].e){
+            // cout << "! " << i <<endl;
             if (S.count(i) == 0){
                 S.insert(i);
                 get_epsilon_closure(i, S);
             }
+        }
     } 
 
 public:
-    DFA(class NFA nfa){
+
+    DFA(class NFA &nfa){
         this->nfa = &nfa.nfa;
         this->nfa_size = nfa.nfa_size;
         this->nfa_q0 = nfa.q0;
+    }
+
+    void export_to_png(){
+        GraphStruct::export_to_png(&dfa, dfa_q0, dfa_size, "DFA示意图");
     }
 
     void build_dfa(){
@@ -295,17 +307,30 @@ public:
         queue<Closure> q;
         dfa_size = 0;
 
+        // cout << "Step 1" << endl;
         // 初始e闭包
         Closure start_closure;
+        start_closure.insert(nfa_q0);
         get_epsilon_closure(nfa_q0, start_closure);
-        idx[start_closure] = ++dfa_size;
+        dfa_q0 = idx[start_closure] = dfa_size++;
         q.push(start_closure);
 
+        dfa.push_back(void_DFA_node); // 添加第一个dfa节点，并判断是不是接受节点
+        for (auto i: start_closure)
+            if ((*nfa)[i].is_final){
+                dfa[0].is_final = 1;
+                break;
+            }
+        // cout << "Step 2" << endl;
         while (!q.empty()){
             Closure now = q.front();
             q.pop();
             int now_id = idx[now];
-
+            // cout << "Now: " << now_id << endl;
+            // for (auto i: now)
+            //     cout << i << ",";
+            // cout << endl;
+            // cout << "Step 4" << endl;
             for (int j = 0; j < 26; j++){
                 Closure next;
                 for (auto i: now) // 构建新的闭包
@@ -315,20 +340,25 @@ public:
                     }
                 if (!next.empty() && idx.count(next) == 0){
                     q.push(next);
-                    idx[next] = ++dfa_size;
+                    dfa.push_back(void_DFA_node); // 添加第一个dfa节点，并判断是不是接受节点
+                    for (auto i: next)
+                        if ((*nfa)[i].is_final){
+                            dfa[dfa_size].is_final = 1;
+                            break;
+                        }
+                    idx[next] = dfa_size++;
                 }
-
+                // cout << "Step 5" << endl;
+                // cout << "Next: " << next.size() << endl;
+                // for (auto i: next)
+                //     cout << i << ",";
+                // cout << endl;
                 // 连边并标记最终节点
                 if (!next.empty()){
                     int next_id = idx[next];
-                    dfa[now_id].alpha[j].push_back(next_id);
-
-                    dfa[next_id].is_final = 0;
-                    for (auto i: next)
-                        if ((*nfa)[i].is_final){
-                            dfa[next_id].is_final = 1;
-                            break;
-                        }
+                    // cout << "next_id: " << next_id << endl;
+                    dfa[now_id].alpha[j].push_back(next_id); 
+                    // cout << now_id << "-" << char(j + 'a') << "->" << next_id << endl;
                 }
             }
         }
@@ -345,18 +375,19 @@ int main(){
 
         NFA nfa(input_str);
 
-        nfa.print_regexp();
-
+        // nfa.print_regexp();
         nfa.split_input_regexp();
-        nfa.print_splited_regexp();
-
+        // nfa.print_splited_regexp();
         nfa.build_postfix_regexp();
-        nfa.print_postfix_regexp();
-
+        // nfa.print_postfix_regexp();
         nfa.build_nfa();
-        nfa.print_nfa();
-
+        // nfa.print_nfa();
         nfa.export_to_png();
+
+        DFA dfa(nfa);
+
+        dfa.build_dfa();
+        dfa.export_to_png();
 
         cout << endl;
     }
