@@ -1,6 +1,9 @@
 /bin/*
+!/bin/.gitkeep
 /obj/*
+!/obj/.gitkeep
 /output/*
+!/output/.gitkeep
 /.vscode/*
 in.txt
 out_example.txt
