@@ -1,0 +1,52 @@
+#ifndef GRAPHSTRUCT_CPP
+
+#define GRAPHSTRUCT_CPP
+#include "GraphStruct.h"
+#include <bits/stdc++.h>
+using namespace std;
+
+void GraphStruct::export_to_png(vector<NodeType>* input, int q0, int size, string title, bool is_nfa){
+    ofstream out_dot("./output/" + title +".dot");
+    out_dot << "digraph NFA {\n";
+    out_dot << "    rankdir=LR;\n";
+    out_dot << "    node [shape=circle];\n";
+    out_dot << "    label = \""<<title<<"\";\n";
+    out_dot << "    labelloc = \"t\";\n";
+    out_dot << "    fontsize = 20;\n";
+    out_dot << "    fontname = \"Helvetica-Bold\";\n";
+    out_dot << "\n";
+
+    for (int i = 0; i < size; i++){
+        out_dot << "    " << i + 1 << " [label=\"" << i + 1 << "\"";
+        if ((*input)[i].is_final)
+            out_dot << ", peripheries=2];\n";
+        else
+            out_dot << "];\n";
+    }
+    out_dot << "\n";
+
+    out_dot << "    start [shape=point];\n";
+    out_dot << "    start -> " << q0 + 1 << ";\n";
+    out_dot << "\n";
+
+    for (int i = 0; i < size; i++){
+        for (int j = 0; j < 26; j++){
+            for (auto t : (*input)[i].alpha[j]){
+                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
+            }
+        }
+        if (is_nfa){
+            for (auto t : (*input)[i].e){
+                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+            }
+        }
+    }
+    out_dot << "}" << endl;
+    out_dot.close();
+
+    system(("dot -Tpng ./output/" + title + ".dot -o ./output/" + title + ".png").c_str());
+    system(("rm ./output/" + title + ".dot").c_str());
+    system(("open ./output/" + title + ".png").c_str());
+}
+
+#endif

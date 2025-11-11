@@ -1,8 +1,9 @@
 /bin/*
+/obj/*
+/output/*
 /.vscode/*
 in.txt
 out_example.txt
 out.txt
 .DS_Store
-/*.dot
-/*.png
+
