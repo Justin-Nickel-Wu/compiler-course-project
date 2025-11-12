@@ -25,10 +25,6 @@ void GraphStruct::export_to_png(string title, bool is_nfa, bool debug){
     }
     out_dot << "\n";
 
-    out_dot << "    start [shape=point];\n";
-    out_dot << "    start -> " << get_q0() + 1 << ";\n";
-    out_dot << "\n";
-
     if (debug) { // 直接按照内部编号输出，方便调试
         for (int i = 0; i < g.size(); i++){
             for (int j = 0; j < 26; j++){
@@ -69,6 +65,10 @@ void GraphStruct::export_to_png(string title, bool is_nfa, bool debug){
             }
         }
     }
+
+    out_dot << "    start [shape=point];\n";
+    out_dot << "    start -> " << (debug ? q0 + 1 : 1) << ";\n"; // 标记起点，注意区分是否debug输出
+    out_dot << "\n";
     
     out_dot << "}" << endl;
     out_dot.close();
