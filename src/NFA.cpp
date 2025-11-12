@@ -5,20 +5,23 @@
 using namespace std;
 
 bool NFA::need_split(char ch1, char ch2){
-        //  a * | ( )
-        //a T     T
-        //* T     T
+        //  a * + ? | ( )
+        //a T         T
+        //* T         T
+        //+ T         T
+        //? T         T    
         //|       
         //( 
-        //) T     T
-        return (isalpha(ch1) && (isalpha(ch2) || ch2 == '(')) 
-            || ((ch1 == '*') && (isalpha(ch2) || ch2 == '('))
-            || (ch1 == ')' && (isalpha(ch2) || ch2 == '('));
+        //) T         T
+        return ch1 != '|' && ch1 != '('
+            && ch2 != '*' && ch2 != '+' && ch2 != '?' && ch2 != '|' && ch2 != ')';
     }
 
 int NFA::op_priority(char op){
     switch (op){
         case '*' : return 3;
+        case '?' : return 3;
+        case '+' : return 3;
         case '.' : return 2;
         case '|' : return 1;
         default  : return 0; // 括号优先级最低
@@ -78,6 +81,23 @@ void NFA::closure(stack<int> &sta){
     sta.push(b);
 }
 
+void NFA::optional(stack<int> &sta){
+    int a, b;
+    b = sta.top(), sta.pop();
+    a = sta.top(), sta.pop();
+    nfa.add_edge(a, b);
+    sta.push(a);
+    sta.push(b);
+}
+
+void NFA::positive_closure(stack<int> &sta){
+    int a, b;
+    b = sta.top(), sta.pop();
+    a = sta.top(), sta.pop();
+    nfa.add_edge(b, a);
+    sta.push(a);
+    sta.push(b);
+}
 
 NFA::NFA(const string &input_str){
     regexp = input_str;
@@ -151,7 +171,7 @@ void NFA::build_postfix_regexp(){
                 op_stack.pop();
             }
             op_stack.pop();
-     }
+        }
         else { // * 或 ｜
             while (!op_stack.empty() && op_priority(op_stack.top()) >= op_priority(ch)){
                 // 保证栈内优先级递增，即需要从后往前计算
@@ -173,6 +193,8 @@ void NFA::build_nfa(){
         // cout << "! " << ch << endl;
         switch (ch){
             case '*': closure(sta); break;
+            case '?': optional(sta); break;
+            case '+': positive_closure(sta); break;
             case '.': concat(sta); break;
             case '|': union_(sta); break;
             default: create_symbol(sta, ch);

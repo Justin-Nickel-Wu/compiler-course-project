@@ -21,6 +21,8 @@ private:
     void union_(stack<int> &sta); // 处理｜操作符
     void concat(stack<int> &sta); // 处理.操作符
     void closure(stack<int> &sta); // 处理*操作符
+    void optional(stack<int> &sta);  // 处理?操作符
+    void positive_closure(stack<int> &sta);  // 处理+操作符
 
 public:
     NFA(const string &input_str);
