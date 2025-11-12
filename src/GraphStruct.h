@@ -15,7 +15,7 @@ private:
 
 public:
     const NodeType void_node;
-    void export_to_png(string title = "", bool is_nfa = 0); // 导出状态图为png图片
+    void export_to_png(string title = "", bool is_nfa = 0, bool debug = 0); // 导出状态图为png图片
     void add_void_node(){ g.push_back(void_node);};
     int size(){ return g.size(); }
     int get_q0(){ return q0; }

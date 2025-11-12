@@ -5,7 +5,7 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-void GraphStruct::export_to_png(string title, bool is_nfa){
+void GraphStruct::export_to_png(string title, bool is_nfa, bool debug){
     ofstream out_dot("./output/" + title +".dot");
     out_dot << "digraph NFA {\n";
     out_dot << "    rankdir=LR;\n";
@@ -29,18 +29,47 @@ void GraphStruct::export_to_png(string title, bool is_nfa){
     out_dot << "    start -> " << get_q0() + 1 << ";\n";
     out_dot << "\n";
 
-    for (int i = 0; i < g.size(); i++){
-        for (int j = 0; j < 26; j++){
-            for (auto t : g[i].alpha[j]){
-                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
+    if (debug) { // 直接按照内部编号输出，方便调试
+        for (int i = 0; i < g.size(); i++){
+            for (int j = 0; j < 26; j++){
+                for (auto t : g[i].alpha[j]){
+                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"" << char(j + 'a') << "\"];\n";
+                }
+            }
+            if (is_nfa){
+                for (auto t : g[i].e){
+                    out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+                }
             }
         }
-        if (is_nfa){
-            for (auto t : g[i].e){
-                out_dot << "    " << i + 1 << " -> " << t + 1 << " [label=\"ε\"];\n";
+    } else { // 按照BFS序输出，保证图片美观
+        queue<int> q;
+        vector<int> idx(g.size(), 0);
+        q.push(q0), idx[q0] = 1;
+        int count = 1;
+        while (!q.empty()){
+            int i = q.front(); q.pop();
+            for (int j = 0; j < 26; j++){
+                for (auto t : g[i].alpha[j]){
+                    if (idx[t] == 0){
+                        idx[t] = ++count;
+                        q.push(t);
+                    }
+                    out_dot << "    " << idx[i] << " -> " << idx[t] << " [label=\"" << char(j + 'a') << "\"];\n";
+                }
+            }
+            if (is_nfa){
+                for (auto t : g[i].e){
+                    if (idx[t] == 0){
+                        idx[t] = ++count;
+                        q.push(t);
+                    }
+                    out_dot << "    " << idx[i] << " -> " << idx[t] << " [label=\"ε\"];\n";
+                }
             }
         }
     }
+    
     out_dot << "}" << endl;
     out_dot.close();
 
