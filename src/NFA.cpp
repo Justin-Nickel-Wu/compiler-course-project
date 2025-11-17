@@ -12,7 +12,7 @@ bool NFA::need_split(char ch1, char ch2){
         //? T         T    
         //|       
         //( 
-        //) T         T
+        //） T         T
         return ch1 != '|' && ch1 != '('
             && ch2 != '*' && ch2 != '+' && ch2 != '?' && ch2 != '|' && ch2 != ')';
     }
