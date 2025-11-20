@@ -1,5 +1,12 @@
 #include "RemoveLeftRecursion.h"
-    
+
+void RemoveLeftRecursion::new_token(const string &token){
+    all_tokens.push_back(token);
+    cp_idx[token] = cp_idx.size();
+    idx_cp[cp_idx[token]] = token;
+    is_non_terminal.push_back(false);
+}
+
 void RemoveLeftRecursion::RemoveLeftRecursion::process_line(const string &line){
     Tokens tokens = utf8_tokens(line);
     // debug输出分割结果
@@ -7,31 +14,27 @@ void RemoveLeftRecursion::RemoveLeftRecursion::process_line(const string &line){
     //     cout << "[" << i << "] ";
     // cout << endl;
     bool arrow_found = false;
-    int from;
+    Production prod;
     for (auto i: tokens){
         if (i == "→")
             arrow_found = true;
         else if (i == "|"){
-            productions[from].push_back(vector<int>()); // 新增一条产生式
+            productions.push_back(prod); // 新增一条产生式
+            prod.rhs.clear();
         }
         else if (!arrow_found){ // 处理产生式左部
-            if (cp_idx.find(i) == cp_idx.end()){
-                cp_idx[i] = cp_idx.size();
-                idx_cp[cp_idx[i]] = i;
-                productions.push_back(vector<vector<int>>()); // 新增非终结符
-            }
-            from = cp_idx[i];
-            productions[from].push_back(vector<int>());
+            if (cp_idx.find(i) == cp_idx.end())
+                new_token(i);
+            prod.lhs = cp_idx[i];
+            is_non_terminal[cp_idx[i]] = true;
+
         } else { // 处理产生式右部
-            if (cp_idx.find(i) == cp_idx.end()){
-                cp_idx[i] = cp_idx.size();
-                idx_cp[cp_idx[i]] = i;
-                productions.push_back(vector<vector<int>>()); // 即使是终结符也需要站位
-            }
-            int to = cp_idx[i];
-            productions[from].back().push_back(to); // 此时我们操作的一定是from的最后一条产生式
+            if (cp_idx.find(i) == cp_idx.end())
+                new_token(i);
+            prod.rhs.push_back(cp_idx[i]);
         }
     }
+    productions.push_back(prod); // 新增最后一条产生式
 }
 
 RemoveLeftRecursion::Tokens RemoveLeftRecursion::utf8_tokens(const std::string& s) {
@@ -61,21 +64,39 @@ void RemoveLeftRecursion::input(const string &filename){
         throw runtime_error("无法打开输入文件！");
     string line;
     while (getline(fin, line)){
+        // debug输出读取的每一行
+        cout << "读取行: " << line << endl;
         process_line(line);
     }
+    
+    sort(productions.begin(), productions.end(),
+     [&](const Production& a, const Production& b) {
+         return idx_cp[a.lhs] < idx_cp[b.lhs];
+     });
     // debug输出读取的产生式
     cout << "读取的产生式如下：" << endl;
     for (int i = 0; i < productions.size(); i++){
-        cout << idx_cp[i] << " → ";
-        for (int j = 0; j < productions[i].size(); j++){
-            for (int k = 0; k < productions[i][j].size(); k++){
-                cout << idx_cp[productions[i][j][k]];
-            }
-            if (j + 1 < productions[i].size())
-                cout << " | ";
-        }
+        cout << idx_cp[productions[i].lhs] << " → ";
+        for (auto j: productions[i].rhs)
+            cout << idx_cp[j] << " ";
         cout << endl;
     }
+
+    sort(all_tokens.begin(), all_tokens.end());
+    // debug输出所有符号
+    cout << "所有符号：";
+    for (auto i: all_tokens)
+        cout << i << " ";
+    cout << endl;
+
+    for (auto i: all_tokens)
+        if (is_non_terminal[cp_idx[i]])
+            non_terminals.push_back(i);
+    // debug输出非终结符
+    cout << "非终结符：";
+    for (auto i: non_terminals)
+        cout << i << " ";
+    cout << endl;
 }
 
 int main(){
