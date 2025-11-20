@@ -10,3 +10,6 @@ out_example.txt
 out.txt
 .DS_Store
 /docs
+
+*.in
+/test
