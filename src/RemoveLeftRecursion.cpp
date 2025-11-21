@@ -93,11 +93,3 @@ void RemoveLeftRecursion::output_input_productions(){
 void RemoveLeftRecursion::output_processed_productions(){
     new_prods.output_productions("消除左递归后的产生式如下：");
 }
-
-int main(){
-    RemoveLeftRecursion rlr;
-    rlr.input("./grammar.in");
-    rlr.eliminate_left_recursion();
-    rlr.output_processed_productions();
-    return 0;
-}
