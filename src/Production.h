@@ -8,9 +8,39 @@ struct Production {
     int lhs; // 产生式左部非终结符编号
     vector<int> rhs; // 产生式右部符号编号序列
 
-    Production(int lhs = -1, int reserve_len = 0): lhs(lhs) {
+    Production(int lhs = -1, int reserve_len = 0): lhs(lhs) { 
         rhs.reserve(reserve_len);
     }
+};
+
+class Productions {
+private:
+    typedef vector<string> Tokens;
+    Tokens all_tokens;                  // 存储所有输入符号
+    Tokens non_terminals;               // 存储非终结符
+    vector<bool> is_non_terminal;       // 标记某个符号是否为非终结符
+    map<string,int> cp_idx;             // 将输入符号与内部编号相对应
+    vector<string> idx_cp;              // 将内部编号与输入符号相对应
+    vector<Production> productions;     // 存储所有产生式
+
+public:
+    void init(const Productions &prods);         // 初始化为另一个Productions的内容.会保留符号表，但清空产生式列表
+    void new_token(const string &token);        // 新增一个符号
+    Tokens utf8_tokens(const std::string& s);   // 将输入字符串按utf8编码分割为符号序列
+    void process_line(const string &line);      // 处理输入的一行产生式
+    void input(const string &filename);         // 从文件中读取产生式
+
+    void push_back(const Production &prod);     // 添加产生式
+    void sort();                                // 对产生式按左部非终结符编号进行排序
+    int get_idx(const string &token);           // 获取符号的内部编号
+    string get_token(const int &idx);           // 获取符号的字符串表示
+    int size();                                 // 获取产生式数量
+    const Production& operator[](const int &i); // 重载下标运算符
+    auto begin(){ return productions.begin(); } // 获取产生式开始迭代器
+    auto end(){ return productions.end(); }     // 获取产生式结束迭代器
+
+    void output_production(const Production &prod, const string &title = ""); // 输出单条产生式
+    void output_productions(const string &title = "");                        // 输出所有产生式
 };
 
 #endif
