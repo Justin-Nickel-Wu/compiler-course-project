@@ -1,13 +1,5 @@
 #include "LeftFactorization.h"
 
-void LeftFactorization::input(const string &filename) {
-    input_prods.input(filename);
-    // Debug 输出符号表和非终结符表
-    // cout << "input_prods" << endl;
-    // input_prods.output_token_table();
-    // input_prods.output_non_terminal_table();
-}
-
 void LeftFactorization::output_input_productions() {
     input_prods.output_productions("输入的产生式");
 }

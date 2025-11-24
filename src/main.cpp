@@ -40,16 +40,20 @@ void DFA_process(){
 }
 
 void RLR_process(){
-    RemoveLeftRecursion rlr;
-    rlr.input("./grammar_RLR.in");
+    Productions prods;
+    RemoveLeftRecursion rlr(prods);
+
+    prods.input("./grammar_RLR.in");
     rlr.output_input_productions();
     rlr.eliminate_left_recursion();
     rlr.output_processed_productions();
 }
 
 void LF_process(){
-    LeftFactorization lf;
-    lf.input("./grammar_LF.in");
+    Productions prods;
+    LeftFactorization lf(prods);
+
+    prods.input("./grammar_LF.in");
     lf.output_input_productions();
     cout << "开始消除左公因子...\n" << endl;
     lf.eliminate_left_factorization();
@@ -57,8 +61,10 @@ void LF_process(){
 }
 
 void FF_process(){
-    FirstFollowCalculator ff;
-    ff.input("./grammar_FF.in");
+    Productions prods;
+    FirstFollowCalculator ff(prods);
+
+    prods.input("./grammar_FF.in");
     ff.output_input_productions();
     ff.calculate_first();
     ff.output_first();

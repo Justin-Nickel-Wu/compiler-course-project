@@ -8,11 +8,11 @@ using namespace std;
 
 class LeftFactorization {
 public:
-    Productions input_prods;
+    Productions &input_prods;
     Productions new_prods;
 
 public:
-    void input(const string &filename);         // 从文件中读取产生式
+    LeftFactorization(Productions &productions) : input_prods(productions) {}
     void output_input_productions();            // 输出输入的产生式
     void output_processed_productions();        // 输出处理后的产生式
     void eliminate_left_factorization();        // 消除左公因子

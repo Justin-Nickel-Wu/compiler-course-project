@@ -8,11 +8,11 @@ using namespace std;
 
 class RemoveLeftRecursion {
 private:
-    Productions input_prods;     // 存储所有产生式
+    Productions &input_prods;     // 存储所有产生式
     Productions new_prods; // 存储消除左递归后的产生式
 
 public:
-    void input(const string &filename){ input_prods.input(filename); }
+    RemoveLeftRecursion(Productions &productions) : input_prods(productions) {}
     void eliminate_left_recursion();
     void output_input_productions();
     void output_processed_productions();

@@ -8,13 +8,13 @@ using namespace std;
 
 class FirstFollowCalculator {
 private:
-    Productions prods;
+    Productions &prods;
     vector<bool> have_epsilon;
     vector<set<int>> First;
     vector<set<int>> Follow;
     
 public:
-    void input(const string &filename){ prods.input(filename); }
+    FirstFollowCalculator(Productions &productions) : prods(productions) {}
     void output_input_productions();
     void calculate_first();
     void calculate_follow();
