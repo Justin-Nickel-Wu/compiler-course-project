@@ -50,6 +50,7 @@ void RemoveLeftRecursion::eliminate_left_recursion(){
         if (have_left_recursion){ // 如果存在左递归，进行消除
             string token = new_prods.get_token(prod.lhs) + "'";
             new_prods.new_token(token);
+            new_prods.set_non_terminal(token);
             int new_lhs = new_prods.get_idx(token);
             //A  → A a | b | c =>
             //  A  → b A' | c A'

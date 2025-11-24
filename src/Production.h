@@ -17,7 +17,7 @@ class Productions {
 private:
     typedef vector<string> Tokens;
     Tokens all_tokens;                  // 存储所有输入符号
-    Tokens non_terminals;               // 存储非终结符
+    vector<int> non_terminals_idx;               // 存储非终结符
     vector<bool> is_non_terminal;       // 标记某个符号是否为非终结符
     map<string,int> cp_idx;             // 将输入符号与内部编号相对应
     vector<string> idx_cp;              // 将内部编号与输入符号相对应
@@ -26,6 +26,7 @@ private:
 public:
     void init(const Productions &prods);         // 初始化为另一个Productions的内容.会保留符号表，但清空产生式列表
     void new_token(const string &token);        // 新增一个符号
+    void set_non_terminal(const string &token); // 新增一个非终结符
     Tokens utf8_tokens(const std::string& s);   // 将输入字符串按utf8编码分割为符号序列
     void process_line(const string &line);      // 处理输入的一行产生式
     void input(const string &filename);         // 从文件中读取产生式
@@ -42,6 +43,8 @@ public:
 
     void output_production(const Production &prod, const string &title = ""); // 输出单条产生式
     void output_productions(const string &title = "");                        // 输出所有产生式
+    void output_token_table();                                                // 输出符号表
+    void output_non_terminal_table();                                        // 输出非终结符表
 };
 
 #endif

@@ -2,7 +2,7 @@
 
 void Productions::init(const Productions &prods){
     all_tokens = prods.all_tokens;
-    non_terminals = prods.non_terminals;
+    non_terminals_idx = prods.non_terminals_idx;
     is_non_terminal = prods.is_non_terminal;
     cp_idx = prods.cp_idx;
     idx_cp = prods.idx_cp;
@@ -14,6 +14,16 @@ void Productions::new_token(const string &token){
     cp_idx[token] = cp_idx.size();
     idx_cp.push_back(token);
     is_non_terminal.push_back(false);
+}
+
+void Productions::set_non_terminal(const string &token){
+    // debug
+    // cout << "设置非终结符: " << token << endl;
+    int idx = get_idx(token);
+    if (idx != -1) {
+        is_non_terminal[idx] = true;
+        non_terminals_idx.push_back(idx);
+    }
 }
 
 void Productions::push_back(const Production &prod){
@@ -86,9 +96,6 @@ void Productions::input(const string &filename){
     //     cout << i << " ";
     // cout << endl;
 
-    for (auto i: all_tokens)
-        if (is_non_terminal[cp_idx[i]])
-            non_terminals.push_back(i);
     // debug输出非终结符
     // cout << "非终结符：";
     // for (auto i: non_terminals)
@@ -114,8 +121,8 @@ void Productions::process_line(const string &line){
         else if (!arrow_found){ // 处理产生式左部
             if (cp_idx.find(i) == cp_idx.end())
                 new_token(i);
+            set_non_terminal(i);
             prod.lhs = cp_idx[i];
-            is_non_terminal[cp_idx[i]] = true;
 
         } else { // 处理产生式右部
             if (cp_idx.find(i) == cp_idx.end())
@@ -167,4 +174,23 @@ int Productions::get_idx(const string &token){
 
 string Productions::get_token(const int &idx){
     return idx_cp[idx];
+}
+
+void Productions::output_token_table(){
+    cout << "符号表如下：" << endl;
+    for (int idx = 0; idx < all_tokens.size(); idx++){
+        string token = get_token(idx);
+        cout << "   编号 " << idx << " : " << token;
+        if (is_non_terminal[idx])
+            cout << " (非终结符)";
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void Productions::output_non_terminal_table(){
+    cout << "非终结符表如下：" << endl;
+    for (auto idx: non_terminals_idx)
+        cout << "   编号 " << idx << " : " << get_token(idx) << endl;
+    cout << endl;
 }

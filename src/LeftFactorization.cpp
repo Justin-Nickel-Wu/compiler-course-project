@@ -2,6 +2,10 @@
 
 void LeftFactorization::input(const string &filename) {
     input_prods.input(filename);
+    // Debug 输出符号表和非终结符表
+    // cout << "input_prods" << endl;
+    // input_prods.output_token_table();
+    // input_prods.output_non_terminal_table();
 }
 
 void LeftFactorization::output_input_productions() {
@@ -31,6 +35,11 @@ void LeftFactorization::eliminate_left_factorization() {
             prods.clear();
         }
     }
+    new_prods.sort();
+    // Debug 输出符号表和非终结符表
+    // cout << "提取左公共因子后" << endl;
+    // new_prods.output_token_table();
+    // new_prods.output_non_terminal_table();
 }
 
 void TrieTree::build_from_productions() {
@@ -102,6 +111,7 @@ void TrieTree::DFS(int p, Production prod) {
         while (target.get_idx(new_lhs) != -1)
             new_lhs += "'"; // A'被用过，就继续加'
         target.new_token(new_lhs);
+        target.set_non_terminal(new_lhs);
 
         prod.rhs.push_back(target.get_idx(new_lhs)); // 变成A->xxxA'
         target.push_back(prod); // 增加新文法
@@ -132,6 +142,4 @@ void TrieTree::anslysis_trie() {
         DFS(son.second, prod);
         prod.rhs.pop_back();
     }
-
-    target.sort();
 }

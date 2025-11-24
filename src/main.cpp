@@ -40,7 +40,7 @@ void DFA_process(){
 
 void RLR_process(){
     RemoveLeftRecursion rlr;
-    rlr.input("./grammar.in");
+    rlr.input("./grammar_RLR.in");
     rlr.output_input_productions();
     rlr.eliminate_left_recursion();
     rlr.output_processed_productions();
@@ -48,7 +48,7 @@ void RLR_process(){
 
 void LF_process(){
     LeftFactorization lf;
-    lf.input("./grammar.in");
+    lf.input("./grammar_LF.in");
     lf.output_input_productions();
     cout << "开始消除左公因子...\n" << endl;
     lf.eliminate_left_factorization();
