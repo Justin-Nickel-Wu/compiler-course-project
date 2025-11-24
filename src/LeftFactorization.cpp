@@ -12,9 +12,25 @@ void LeftFactorization::output_processed_productions() {
     new_prods.output_productions("消除左公因子后的产生式");
 }
 
-void TrieTree::build_from_productions(Productions &prods) {
+void LeftFactorization::eliminate_left_factorization() {
+    Productions prods;
+    prods.init(input_prods);
+    new_prods.init(input_prods);
+    new_prods.clear();
+    for (int i = 0; i < input_prods.size(); i++) {
+        prods.push_back(input_prods[i]);
+        if (i + 1 >= input_prods.size() || input_prods[i].lhs != input_prods[i + 1].lhs) {
+            // 处理以同一非终结符为左部的产生式集合
+            TrieTree trie(prods, new_prods);
+            trie.anslysis_trie();
+            prods.clear();
+        }
+    }
+}
+
+void TrieTree::build_from_productions() {
     nodes.clear();
-    nodes.push_back(TrieNode()); // 根节点
+    nodes.push_back(TrieNode()); // 根节点;
 
     for (auto prod: prods) {
         // if (prod.rhs.size() == 1 && prod.rhs[0] == prods.get_idx("ε"))
@@ -33,7 +49,7 @@ void TrieTree::build_from_productions(Productions &prods) {
     }
 }
 
-void TrieTree::output_tree(Productions &prods, string title) {
+void TrieTree::output_tree(string title) {
     ofstream out_dot("./output/" + title +".dot");
     out_dot << "digraph Trie {\n";
     out_dot << "    rankdir=TB;\n";
@@ -63,4 +79,47 @@ void TrieTree::output_tree(Productions &prods, string title) {
     out_dot << "}" << endl;
     out_dot.close();
     system(("dot -Tpng ./output/" + title + ".dot -o ./output/" + title + ".png").c_str());
+}
+
+void TrieTree::DFS(int p, Production prod) {
+    if (nodes[p].son.empty()) { // 到达叶子结点
+        target.push_back(prod);
+        return;
+    }
+
+    if (nodes[p].son.size() > 1 || nodes[p].is_end) { // 存在分叉或有子串时需要提取
+        string new_lhs = target.get_token(prod.lhs) + "'"; // 创建A‘
+        while (target.get_idx(new_lhs) != -1)
+            new_lhs += "'"; // A'被用过，就继续加'
+        target.new_token(new_lhs);
+
+        prod.rhs.push_back(target.get_idx(new_lhs)); // 变成A->xxxA'
+        target.push_back(prod); // 增加新文法
+
+        prod.lhs = target.get_idx(new_lhs); // 之后的文法变成A'->xxx
+        prod.rhs.clear();
+
+        if (nodes[p].is_end) { // 如果是trie树上标记了结束，要插入A'->ε
+            prod.rhs.push_back(target.get_idx("ε"));
+            target.push_back(prod);
+            prod.rhs.pop_back();
+        }
+    }
+
+    for (auto son: nodes[p].son) {
+        int idx = son.first, q = son.second;
+        prod.rhs.push_back(idx);
+        DFS(q, prod);
+        prod.rhs.pop_back();
+    }
+}
+
+void TrieTree::anslysis_trie() {
+    Production prod(prods[0].lhs);
+
+    for (auto son: nodes[root].son) {
+        prod.rhs.push_back(son.first);
+        DFS(son.second, prod);
+        prod.rhs.pop_back();
+    }
 }

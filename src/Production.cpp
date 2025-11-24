@@ -28,6 +28,9 @@ int Productions::size(){
     return productions.size();
 }
 
+void Productions::clear(){
+    productions.clear();
+}
 
 Productions::Tokens Productions::utf8_tokens(const std::string& s) {
     Tokens tokens;
@@ -159,7 +162,7 @@ void Productions::sort(){
 }
 
 int Productions::get_idx(const string &token){
-    return cp_idx[token];
+    return cp_idx.find(token) != cp_idx.end() ? cp_idx[token] : -1;
 }
 
 string Productions::get_token(const int &idx){

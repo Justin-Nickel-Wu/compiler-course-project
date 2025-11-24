@@ -29,10 +29,11 @@ public:
     Tokens utf8_tokens(const std::string& s);   // 将输入字符串按utf8编码分割为符号序列
     void process_line(const string &line);      // 处理输入的一行产生式
     void input(const string &filename);         // 从文件中读取产生式
+    void clear();                               // 清空产生式列表,但保留符号表
 
     void push_back(const Production &prod);     // 添加产生式
     void sort();                                // 对产生式按左部非终结符编号进行排序
-    int get_idx(const string &token);           // 获取符号的内部编号
+    int get_idx(const string &token);           // 获取符号的内部编号,不存在返回-1
     string get_token(const int &idx);           // 获取符号的字符串表示
     int size();                                 // 获取产生式数量
     const Production& operator[](const int &i); // 重载下标运算符

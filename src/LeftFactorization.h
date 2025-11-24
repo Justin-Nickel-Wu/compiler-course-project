@@ -26,12 +26,18 @@ private:
         TrieNode() : is_end(false) {}
     };
     
-    vector<TrieNode> nodes;
     const int root = 0; // 根节点编号，跟据设计，根节点编号恒为0
 
+    vector<TrieNode> nodes;
+    Productions &prods, &target;
+
+    void DFS(int p, Production prod);
+
 public:
-    void build_from_productions(Productions &prods); // 从产生式构建Trie树
-    void output_tree(Productions &prods, string title = "");
+    TrieTree(Productions &prods, Productions &target) : prods(prods), target(target){}
+    void build_from_productions(); // 从产生式构建Trie树
+    void anslysis_trie();
+    void output_tree(string title = "");
 };
 
 
