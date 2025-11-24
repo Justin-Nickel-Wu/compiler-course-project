@@ -96,6 +96,8 @@ void Productions::input(const string &filename){
     while (getline(fin, line)){
         // debug输出读取的每一行
         // cout << "读取行: " << line << endl;
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
         process_line(line);
     }
     
