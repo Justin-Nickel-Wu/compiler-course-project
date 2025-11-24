@@ -3,7 +3,7 @@
 void Productions::init(const Productions &prods){
     all_tokens = prods.all_tokens;
     non_terminals_idx = prods.non_terminals_idx;
-    is_non_terminal = prods.is_non_terminal;
+    non_terminal_flag = prods.non_terminal_flag;
     cp_idx = prods.cp_idx;
     idx_cp = prods.idx_cp;
     productions.clear();
@@ -13,7 +13,7 @@ void Productions::new_token(const string &token){
     all_tokens.push_back(token);
     cp_idx[token] = cp_idx.size();
     idx_cp.push_back(token);
-    is_non_terminal.push_back(false);
+    non_terminal_flag.push_back(false);
 }
 
 void Productions::set_non_terminal(const string &token){
@@ -21,7 +21,7 @@ void Productions::set_non_terminal(const string &token){
     // cout << "设置非终结符: " << token << endl;
     int idx = get_idx(token);
     if (idx != -1) {
-        is_non_terminal[idx] = true;
+        non_terminal_flag[idx] = true;
         non_terminals_idx.push_back(idx);
     }
 }
@@ -36,6 +36,18 @@ const Production& Productions::operator[](const int &i){
 
 int Productions::size(){
     return productions.size();
+}
+
+int Productions::token_size(){
+    return all_tokens.size();
+}
+
+int Productions::non_terminal_size(){
+    return non_terminals_idx.size();
+}
+
+bool Productions::is_non_terminal(const int &idx){
+    return non_terminal_flag[idx];
 }
 
 void Productions::clear(){
@@ -136,7 +148,7 @@ void Productions::process_line(const string &line){
 void Productions::output_production(const Production &prod, const string &title){
     if (title.length() > 0)
         cout << title << endl;
-    cout << idx_cp[prod.lhs] << " → ";
+    cout << "   " << idx_cp[prod.lhs] << " → ";
     for (auto cp: prod.rhs)
         cout << idx_cp[cp];
     cout << '\n' << endl;
@@ -151,7 +163,7 @@ void Productions::output_productions(const string &title){
             if (last_lhs != "")
                 cout << endl;
             last_lhs = idx_cp[p.lhs];
-            cout << idx_cp[p.lhs] << " → ";
+            cout << "   " << idx_cp[p.lhs] << " → ";
         } else
             cout << " | "; // 同一产生式的其他右部
 
@@ -181,7 +193,7 @@ void Productions::output_token_table(){
     for (int idx = 0; idx < all_tokens.size(); idx++){
         string token = get_token(idx);
         cout << "   编号 " << idx << " : " << token;
-        if (is_non_terminal[idx])
+        if (non_terminal_flag[idx])
             cout << " (非终结符)";
         cout << endl;
     }

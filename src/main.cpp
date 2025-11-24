@@ -3,6 +3,7 @@
 #include "DFA.h"
 #include "RemoveLeftRecursion.h"
 #include "LeftFactorization.h"
+#include "FirstFollowCalculator.h"
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -55,12 +56,23 @@ void LF_process(){
     lf.output_processed_productions();
 }
 
+void FF_process(){
+    FirstFollowCalculator ff;
+    ff.input("./grammar_FF.in");
+    ff.output_input_productions();
+    ff.calculate_first();
+    ff.output_first();
+    ff.calculate_follow();
+    ff.output_follow();
+}
+
 void Err(){
     cout << "输入参数错误!" << endl;
     cout << "用法：" << endl;
     cout << "make run DFA: 运行正则表达式到DFA的转换" << endl;
     cout << "make run RLR: 运行消除左递归" << endl;
     cout << "make run LF: 运行消除左公因子" << endl;
+    cout << "make run FF: 运行First和Follow集计算" << endl;
     exit(1);
 }
 
@@ -69,6 +81,7 @@ int main(int argc, char* argv[]){
     else if (string(argv[1]) == "DFA" || string(argv[1]) == "dfa") DFA_process();
     else if (string(argv[1]) == "RLR" || string(argv[1]) == "rlr") RLR_process();
     else if (string(argv[1]) == "LF" || string(argv[1]) == "lf") LF_process();
+    else if (string(argv[1]) == "FF" || string(argv[1]) == "ff") FF_process();
     else Err();
 
     return 0;

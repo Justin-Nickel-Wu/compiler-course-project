@@ -17,8 +17,8 @@ class Productions {
 private:
     typedef vector<string> Tokens;
     Tokens all_tokens;                  // 存储所有输入符号
-    vector<int> non_terminals_idx;               // 存储非终结符
-    vector<bool> is_non_terminal;       // 标记某个符号是否为非终结符
+    vector<int> non_terminals_idx;      // 存储非终结符
+    vector<bool> non_terminal_flag;       // 标记某个符号是否为非终结符
     map<string,int> cp_idx;             // 将输入符号与内部编号相对应
     vector<string> idx_cp;              // 将内部编号与输入符号相对应
     vector<Production> productions;     // 存储所有产生式
@@ -37,9 +37,17 @@ public:
     int get_idx(const string &token);           // 获取符号的内部编号,不存在返回-1
     string get_token(const int &idx);           // 获取符号的字符串表示
     int size();                                 // 获取产生式数量
+    int token_size();                           // 获取符号数量
+    int non_terminal_size();                    // 获取非终结符数量
     const Production& operator[](const int &i); // 重载下标运算符
-    auto begin(){ return productions.begin(); } // 获取产生式开始迭代器
-    auto end(){ return productions.end(); }     // 获取产生式结束迭代器
+    bool is_non_terminal(const int &idx);       // 判断某个符号是否为非终结符
+
+    auto begin(){ return productions.begin(); }                    // 获取产生式开始迭代器
+    auto end(){ return productions.end(); }                        // 获取产生式结束迭代器
+    auto token_begin(){ return all_tokens.begin(); }               // 获取符号开始迭代器
+    auto token_end(){ return all_tokens.end(); }                   // 获取符号结束迭代器
+    auto non_terminal_begin(){ return non_terminals_idx.begin(); } // 获取非终结符开始迭代器
+    auto non_terminal_end(){ return non_terminals_idx.end(); }     // 获取非终结符结束迭代器
 
     void output_production(const Production &prod, const string &title = ""); // 输出单条产生式
     void output_productions(const string &title = "");                        // 输出所有产生式
