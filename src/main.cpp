@@ -2,6 +2,7 @@
 #include "NFA.h"
 #include "DFA.h"
 #include "RemoveLeftRecursion.h"
+#include "LeftFactorization.h"
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -45,6 +46,16 @@ void RLR_process(){
     rlr.output_processed_productions();
 }
 
+void LF_process(){
+    LeftFactorization lf;
+    lf.input("./grammar.in");
+    lf.output_input_productions();
+
+    TrieTree trie;
+    trie.build_from_productions(lf.input_prods);
+    trie.output_tree(lf.input_prods, "消除左公因子前的Trie树");
+}
+
 void Err(){
     cout << "输入参数错误!" << endl;
     cout << "用法：" << endl;
@@ -57,6 +68,7 @@ int main(int argc, char* argv[]){
     if (argc != 2) Err();
     else if (string(argv[1]) == "DFA") DFA_process();
     else if (string(argv[1]) == "RLR") RLR_process();
+    else if (string(argv[1]) == "LF") LF_process();
     else Err();
 
     return 0;
