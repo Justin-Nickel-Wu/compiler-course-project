@@ -13,3 +13,6 @@ out.txt
 
 *.in
 /test
+/mytest
+
+*.dSYM

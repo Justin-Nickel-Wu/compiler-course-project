@@ -22,6 +22,11 @@ void LeftFactorization::eliminate_left_factorization() {
         if (i + 1 >= input_prods.size() || input_prods[i].lhs != input_prods[i + 1].lhs) {
             // 处理以同一非终结符为左部的产生式集合
             TrieTree trie(prods, new_prods);
+            trie.build_from_productions();
+            trie.output_tree("Trie-of-" + new_prods.get_token(prods[0].lhs));
+            // Debug 输出
+            // cout << "prods size: " << prods.size() << endl;
+            // cout << "Trie size: " << trie.nodes.size() << endl;
             trie.anslysis_trie();
             prods.clear();
         }
@@ -70,8 +75,13 @@ void TrieTree::output_tree(string title) {
         que.pop();
 
         for (pair<int,int> son: nodes[p].son){
-            out_dot << "    " << son.second << " [label=\"" 
-                    << prods.get_token(son.first) << "\"];\n";
+            // 输出节点
+            out_dot << "    " << son.second << " [label=\""
+                    << prods.get_token(son.first) << '\"';
+            if (nodes[son.second].is_end)
+                out_dot << ", peripheries=2";
+            out_dot<< "];\n";
+            // 输出边
             out_dot << "    " << p << " -> " << son.second << ";\n";
             que.push(son.second);
         }
@@ -122,4 +132,6 @@ void TrieTree::anslysis_trie() {
         DFS(son.second, prod);
         prod.rhs.pop_back();
     }
+
+    target.sort();
 }

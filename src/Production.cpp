@@ -132,7 +132,7 @@ void Productions::output_production(const Production &prod, const string &title)
     cout << idx_cp[prod.lhs] << " → ";
     for (auto cp: prod.rhs)
         cout << idx_cp[cp];
-    cout << endl;
+    cout << '\n' << endl;
 }
 
 void Productions::output_productions(const string &title){
@@ -151,7 +151,7 @@ void Productions::output_productions(const string &title){
         for (auto cp: p.rhs) // 输出产生式右部
             cout << idx_cp[cp];
     }
-    cout << endl;
+    cout << '\n' << endl;
 }
 
 void Productions::sort(){

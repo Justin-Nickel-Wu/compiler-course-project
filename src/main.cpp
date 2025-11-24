@@ -50,10 +50,9 @@ void LF_process(){
     LeftFactorization lf;
     lf.input("./grammar.in");
     lf.output_input_productions();
-
-    TrieTree trie;
-    trie.build_from_productions(lf.input_prods);
-    trie.output_tree(lf.input_prods, "消除左公因子前的Trie树");
+    cout << "开始消除左公因子...\n" << endl;
+    lf.eliminate_left_factorization();
+    lf.output_processed_productions();
 }
 
 void Err(){
@@ -61,14 +60,15 @@ void Err(){
     cout << "用法：" << endl;
     cout << "make run DFA: 运行正则表达式到DFA的转换" << endl;
     cout << "make run RLR: 运行消除左递归" << endl;
+    cout << "make run LF: 运行消除左公因子" << endl;
     exit(1);
 }
 
 int main(int argc, char* argv[]){
     if (argc != 2) Err();
-    else if (string(argv[1]) == "DFA") DFA_process();
-    else if (string(argv[1]) == "RLR") RLR_process();
-    else if (string(argv[1]) == "LF") LF_process();
+    else if (string(argv[1]) == "DFA" || string(argv[1]) == "dfa") DFA_process();
+    else if (string(argv[1]) == "RLR" || string(argv[1]) == "rlr") RLR_process();
+    else if (string(argv[1]) == "LF" || string(argv[1]) == "lf") LF_process();
     else Err();
 
     return 0;

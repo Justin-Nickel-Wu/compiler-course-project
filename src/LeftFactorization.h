@@ -19,6 +19,8 @@ public:
 };
 
 class TrieTree {
+    //TODO: 方便测试，记得删除
+    // friend class LeftFactorization;
 private:
     struct TrieNode {
         map<int, int> son;
