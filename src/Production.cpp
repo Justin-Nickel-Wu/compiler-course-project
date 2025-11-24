@@ -6,6 +6,7 @@ void Productions::init(const Productions &prods){
     non_terminal_flag = prods.non_terminal_flag;
     cp_idx = prods.cp_idx;
     idx_cp = prods.idx_cp;
+    start = prods.start;
     productions.clear();
 }
 
@@ -52,6 +53,10 @@ bool Productions::is_non_terminal(const int &idx){
 
 void Productions::clear(){
     productions.clear();
+}
+
+int Productions::get_start_idx() {
+    return start;
 }
 
 Productions::Tokens Productions::utf8_tokens(const std::string& s) {
@@ -135,6 +140,8 @@ void Productions::process_line(const string &line){
                 new_token(i);
             set_non_terminal(i);
             prod.lhs = cp_idx[i];
+            if (start == -1)
+                start = prod.lhs; // 设置开始符号
 
         } else { // 处理产生式右部
             if (cp_idx.find(i) == cp_idx.end())

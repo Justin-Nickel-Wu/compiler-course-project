@@ -9,6 +9,7 @@ using namespace std;
 class FirstFollowCalculator {
 private:
     Productions prods;
+    vector<bool> have_epsilon;
     vector<set<int>> First;
     vector<set<int>> Follow;
     

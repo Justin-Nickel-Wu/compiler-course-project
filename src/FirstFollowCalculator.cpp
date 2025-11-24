@@ -6,7 +6,7 @@ void FirstFollowCalculator::output_input_productions() {
 
 void FirstFollowCalculator::calculate_first() {
     First.resize(prods.token_size());
-    vector<bool> have_epsilon(prods.token_size(), false);
+    have_epsilon.resize(prods.token_size(), false);
 
     for (auto token = prods.token_begin(); token != prods.token_end(); ++token) {
         int idx = prods.get_idx(*token);
@@ -44,7 +44,41 @@ void FirstFollowCalculator::calculate_first() {
 }
 
 void FirstFollowCalculator::calculate_follow() {
-    //TODO
+    Follow.resize(prods.token_size());
+    int start_idx = prods.get_start_idx();
+
+    prods.new_token("$"); // 添加输入结束符号
+    Follow[start_idx].insert(prods.get_idx("$")); // 文法开始符号的Follow集加入输入结束符号
+
+    bool changed;
+    int epsilon_idx = prods.get_idx("ε");
+    do {
+        changed = false;
+        for (auto prod: prods) { // 枚举每一条产生式
+            bool all_have_epsilon = true;
+
+            for (int i = prod.rhs.size() - 1; i >= 0; i--) { // 从后往前枚举右部
+                if (i + 1 < prod.rhs.size()) { // A->Bβ 情况,把β的FIRST加入B的FOLLOW
+                    for (auto symbol_idx: First[prod.rhs[i + 1]]) {
+                        if (symbol_idx != epsilon_idx && Follow[prod.rhs[i]].insert(symbol_idx).second) {
+                            changed = true;
+                        }
+                    }
+                }
+
+                if (all_have_epsilon && prods.is_non_terminal(prod.rhs[i])) { // A->B情况,把A的FOLLOW加入B的FOLLOW
+                    for (auto symbol_idx: Follow[prod.lhs]) {
+                        if (symbol_idx != epsilon_idx && Follow[prod.rhs[i]].insert(symbol_idx).second) {
+                            changed = true;
+                        }
+                    }
+                }
+
+                if (!have_epsilon[prod.rhs[i]])
+                    all_have_epsilon = false;
+            }
+        }
+    } while (changed);
 }
 
 void FirstFollowCalculator::output_first() {
@@ -64,5 +98,17 @@ void FirstFollowCalculator::output_first() {
 }
 
 void FirstFollowCalculator::output_follow() {
-   //TODO
+    cout << "Follow集:" << endl;
+    for (auto i = prods.non_terminal_begin(); i != prods.non_terminal_end(); ++i) {
+        int idx = *i;
+        cout << "   Follow(" << prods.get_token(idx) << ") = { ";
+        bool first = true;
+        for (auto symbol: Follow[idx]) {
+            if (!first) cout << ", ";
+            cout << prods.get_token(symbol);
+            first = false;
+        }
+        cout << " }" << endl;
+    }
+    cout << endl;
 }
