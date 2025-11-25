@@ -27,12 +27,22 @@
 
 ---
 #### 使用指南
+输入文件存储在/input文件夹下。/input文件夹预设了一些文法样例以供测试。如果不指定输入文件将使用默认输入文件。默认输入文件可在main.cpp中宏定义部分修改。
 
-命令行输入:
+**命令行输入:**
 - **make run DFA**: 编译并执行正则表达式至最小化DFA的转换。根据命令行提示完成输入后，示意图将会输出至output/。
-- **make run RLR**: 编译并执行文法的左递归消除。输入文法为./grammar_RLF.in。
-- **make run LF**: 编译并执行文法的左公共因子提取。输入文法为./grammar_LF.in，中间过程（Trie树）会输出至output/。
-- **make run FF**：编译并执行文法的FIRST集与FOLLOW集计算。输入文法为./grammar_FF.in。
-- **make run LL1**：编译并执行文法的LL(1)分析表构建，根据命令行提示可完成给予分析表的文法检验。输入文法为./grammar_LL1.in,LL(1)分析表会以markdown形式输出至output/。
+- **make run RLR [FILE]**: 编译并执行文法的左递归消除。
+- **make run LF [FILE]**: 编译并执行文法的左公共因子提取。中间过程（Trie树）会输出至output/。
+- **make run FF [FILE]**：编译并执行文法的FIRST集与FOLLOW集计算。
+- **make run LL1 [FILE]**：编译并执行文法的LL(1)分析表构建，根据命令行提示可完成基于分析表的文法匹配。LL(1)分析表会以markdown形式输出至output/。
 - **make**: 仅编译。
 - **make clean**: 删除编译结果。 
+
+**Example：**
+
+执行LL(1)分析表创建与文法匹配,输入文件为/src/LL1-SimpleExpr.in。
+``` make run LL1 LL1-SimpleExpr.in ```
+
+执行文法的左递归消除，使用默认输入文件。
+``` make run RLR ```
+

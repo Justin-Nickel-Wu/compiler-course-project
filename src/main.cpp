@@ -1,3 +1,5 @@
+#define DEFAULT_FILE "./input/LL1-SimpleExpr.in"
+
 #include "GraphStruct.h"
 #include "NFA.h"
 #include "DFA.h"
@@ -8,16 +10,16 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-string input_str;
+string input_file;
 
 void DFA_process(){
     while (1){
             cout << "请输入正则表达式 (输入 quit 结束): " << endl;
-            cin >> input_str;
-            if (input_str == "quit")
+            getline(cin, input_file);
+            if (input_file == "quit")
                 break;
 
-            NFA nfa(input_str);
+            NFA nfa(input_file);
 
             // nfa.print_regexp();
             nfa.split_input_regexp();
@@ -44,7 +46,7 @@ void RLR_process(){
     Productions prods;
     RemoveLeftRecursion rlr(prods);
 
-    prods.input("./grammar_RLR.in");
+    prods.input(input_file);
     rlr.output_input_productions();
     rlr.eliminate_left_recursion();
     rlr.output_processed_productions();
@@ -54,7 +56,7 @@ void LF_process(){
     Productions prods;
     LeftFactorization lf(prods);
 
-    prods.input("./grammar_LF.in");
+    prods.input(input_file);
     lf.output_input_productions();
     cout << "开始消除左公因子...\n" << endl;
     lf.eliminate_left_factorization();
@@ -65,7 +67,7 @@ void FF_process(){
     Productions prods;
     FirstFollowCalculator ff(prods);
 
-    prods.input("./grammar_FF.in");
+    prods.input(input_file);
     ff.output_input_productions();
     ff.calculate_first();
     ff.output_first();
@@ -78,7 +80,7 @@ void LL1_process(){
     FirstFollowCalculator ff(prods);
     LL1 ll1(prods, ff);
 
-    prods.input("./grammar_LL1.in");
+    prods.input(input_file);
     if (ll1.bulid_parse_table()){
         cout << "\033[32mLL(1)分析表构建成功!\033[0m\n" << endl;
     }
@@ -91,16 +93,16 @@ void LL1_process(){
     while (1) {
         cout << "========================================\n" << endl;
         cout << "请输入待匹配的字符串 (输入 quit 结束): " << endl;
-        getline(cin, input_str);
+        getline(cin, input_file);
         cout << endl;
-        if (input_str == "quit")
+        if (input_file == "quit")
             break;
 
-        if (ll1.match(input_str)) {
-            cout << "\033[32m字符串 " << input_str << " 匹配成功!\033[0m\n" << endl;
+        if (ll1.match(input_file)) {
+            cout << "\033[32m字符串 " << input_file << " 匹配成功!\033[0m\n" << endl;
         }
         else {
-            cout << "\033[31m字符串 " << input_str << " 匹配失败!\033[0m\n" << endl;
+            cout << "\033[31m字符串 " << input_file << " 匹配失败!\033[0m\n" << endl;
         }
     }
 }
@@ -108,15 +110,27 @@ void LL1_process(){
 void Err(){
     cout << "输入参数错误!" << endl;
     cout << "用法：" << endl;
-    cout << "make run DFA: 运行正则表达式到DFA的转换" << endl;
-    cout << "make run RLR: 运行消除左递归" << endl;
-    cout << "make run LF: 运行消除左公因子" << endl;
-    cout << "make run FF: 运行First和Follow集计算" << endl;
+    cout << "make run DFA [文件名（可选）]: 运行正则表达式到DFA的转换" << endl;
+    cout << "make run RLR [文件名（可选）]: 运行消除左递归" << endl;
+    cout << "make run LF [文件名（可选）]: 运行消除左公因子" << endl;
+    cout << "make run FF [文件名（可选）]: 运行First和Follow集计算" << endl;
     exit(1);
 }
 
 int main(int argc, char* argv[]){
-    if (argc != 2) Err();
+    input_file = DEFAULT_FILE;
+    if (argc == 3) {
+        input_file = "./input/" + string(argv[2]);
+        ifstream fin(input_file);
+        if (!fin) {
+            cout << "无法打开输入文件: /input/" << input_file << endl;
+            cout << "请确保文件存在于 input 文件夹中。" << endl;
+            exit(1);
+        } else
+            fin.close();
+    }
+
+    if (argc != 2 && argc != 3) Err();
     else if (string(argv[1]) == "DFA" || string(argv[1]) == "dfa") DFA_process();
     else if (string(argv[1]) == "RLR" || string(argv[1]) == "rlr") RLR_process();
     else if (string(argv[1]) == "LF" || string(argv[1]) == "lf") LF_process();

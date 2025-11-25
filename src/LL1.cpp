@@ -21,7 +21,7 @@ bool LL1::bulid_parse_table() {
                 if (idx != epsilon_idx) {
                     auto key = make_pair(prod.lhs, idx);
                     if (parse_table.count(key) > 0) { // 表格中填入了多项，发生冲突，非LL(1)   
-                        cout << "发现冲突的产生式: ";
+                        cout << "发现冲突的产生式:" << endl;
                         prods.output_production(prods[parse_table[key]]);
                         prods.output_production(prod);
                         return false;
@@ -40,7 +40,7 @@ bool LL1::bulid_parse_table() {
             for (auto idx: follow_set) {
                 auto key = make_pair(prod.lhs, idx);
                 if (parse_table.count(key) > 0) { // 表格中填入了多项，发生冲突，非LL(1)   
-                    cout << "发现冲突的产生式: ";
+                    cout << "发现冲突的产生式:" << endl;
                     prods.output_production(prods[parse_table[key]]);
                     prods.output_production(prod);
                     return false;

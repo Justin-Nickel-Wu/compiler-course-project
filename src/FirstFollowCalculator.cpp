@@ -61,6 +61,8 @@ void FirstFollowCalculator::calculate_follow() {
                 if (i + 1 < prod.rhs.size()) { // A->Bβ 情况,把β的FIRST加入B的FOLLOW
                     for (auto symbol_idx: First[prod.rhs[i + 1]]) {
                         if (symbol_idx != epsilon_idx && Follow[prod.rhs[i]].insert(symbol_idx).second) {
+                            // debug
+                            // cout << "* 向Follow(" << prods.get_token(prod.rhs[i]) << ")中加入First(" << prods.get_token(prod.rhs[i + 1]) << ")的元素 " << prods.get_token(symbol_idx) << endl;
                             changed = true;
                         }
                     }
@@ -69,6 +71,8 @@ void FirstFollowCalculator::calculate_follow() {
                 if (all_have_epsilon && prods.is_non_terminal(prod.rhs[i])) { // A->B情况,把A的FOLLOW加入B的FOLLOW
                     for (auto symbol_idx: Follow[prod.lhs]) {
                         if (symbol_idx != epsilon_idx && Follow[prod.rhs[i]].insert(symbol_idx).second) {
+                            // debug
+                            // cout << "* 向Follow(" << prods.get_token(prod.rhs[i]) << ")中加入Follow(" << prods.get_token(prod.lhs) << ")的元素 " << prods.get_token(symbol_idx) << endl;
                             changed = true;
                         }
                     }
