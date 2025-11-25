@@ -215,3 +215,9 @@ void Productions::output_non_terminal_table(){
         cout << "   编号 " << idx << " : " << get_token(idx) << endl;
     cout << endl;
 }
+
+void Productions::output_production_for_table(ofstream &out_md, const Production &prod) {
+    out_md << idx_cp[prod.lhs] << " → ";
+    for (auto cp: prod.rhs)
+        out_md << idx_cp[cp];
+}

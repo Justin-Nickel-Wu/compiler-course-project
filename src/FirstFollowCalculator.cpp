@@ -6,14 +6,14 @@ void FirstFollowCalculator::output_input_productions() {
 
 void FirstFollowCalculator::calculate_first() {
     First.resize(prods.token_size());
-    have_epsilon.resize(prods.token_size(), false);
+    __have_epsilon.resize(prods.token_size(), false);
 
     for (auto token = prods.token_begin(); token != prods.token_end(); ++token) {
         int idx = prods.get_idx(*token);
         if (!prods.is_non_terminal(idx)) {
             First[idx].insert(idx);
             if (*token == "ε")
-                have_epsilon[idx] = true;
+                __have_epsilon[idx] = true;
         }
     }
 
@@ -30,14 +30,14 @@ void FirstFollowCalculator::calculate_first() {
                         changed = true;
                     }
                 }
-                if (!have_epsilon[token_idx]) { // 不包含ε，停止向后处理
+                if (!__have_epsilon[token_idx]) { // 不包含ε，停止向后处理
                     all_have_epsilon = false;
                     break; 
                 }
             }
             if (all_have_epsilon) {
                 First[prod.lhs].insert(epsilon_idx); // 如果所有符号都能推出ε,则左部也能推出ε
-                have_epsilon[prod.lhs] = true;
+                __have_epsilon[prod.lhs] = true;
             }
         }
     } while (changed);
@@ -74,7 +74,7 @@ void FirstFollowCalculator::calculate_follow() {
                     }
                 }
 
-                if (!have_epsilon[prod.rhs[i]])
+                if (!__have_epsilon[prod.rhs[i]])
                     all_have_epsilon = false;
             }
         }
@@ -111,4 +111,16 @@ void FirstFollowCalculator::output_follow() {
         cout << " }" << endl;
     }
     cout << endl;
+}
+
+set<int>& FirstFollowCalculator::get_First(int symbol_idx) {
+    return First[symbol_idx];
+}
+
+set<int>& FirstFollowCalculator::get_Follow(int symbol_idx) {
+    return Follow[symbol_idx];
+}
+
+bool FirstFollowCalculator::have_epsilon(int idx) {
+    return __have_epsilon[idx];
 }

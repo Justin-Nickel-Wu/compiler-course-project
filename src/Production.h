@@ -55,6 +55,7 @@ public:
     void output_productions(const string &title = "");                        // 输出所有产生式
     void output_token_table();                                                // 输出符号表
     void output_non_terminal_table();                                         // 输出非终结符表
+    void output_production_for_table(ofstream &out_md, const Production &prod); // 输出单条产生式，用于表格
 };
 
 #endif

@@ -9,7 +9,7 @@ using namespace std;
 class FirstFollowCalculator {
 private:
     Productions &prods;
-    vector<bool> have_epsilon;
+    vector<bool> __have_epsilon;
     vector<set<int>> First;
     vector<set<int>> Follow;
     
@@ -18,8 +18,11 @@ public:
     void output_input_productions();
     void calculate_first();
     void calculate_follow();
+    set<int>& get_First(int symbol_idx);
+    set<int>& get_Follow(int symbol_idx);
     void output_first();
     void output_follow();
+    bool have_epsilon(int idx);
 };
 
 #endif

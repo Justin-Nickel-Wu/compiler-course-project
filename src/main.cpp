@@ -4,6 +4,7 @@
 #include "RemoveLeftRecursion.h"
 #include "LeftFactorization.h"
 #include "FirstFollowCalculator.h"
+#include "LL1.h"
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -72,6 +73,22 @@ void FF_process(){
     ff.output_follow();
 }
 
+void LL1_process(){
+    Productions prods;
+    FirstFollowCalculator ff(prods);
+    LL1 ll1(prods, ff);
+
+    prods.input("./grammar_LL1.in");
+    if (ll1.bulid_parse_table()){
+        cout << "LL(1)分析表构建成功!" << endl;
+    }
+    else {
+        cout << "LL(1)分析表构建失败!" << endl;
+    }
+
+    ll1.output_parse_table("LL1_parse_table");
+}
+
 void Err(){
     cout << "输入参数错误!" << endl;
     cout << "用法：" << endl;
@@ -88,6 +105,7 @@ int main(int argc, char* argv[]){
     else if (string(argv[1]) == "RLR" || string(argv[1]) == "rlr") RLR_process();
     else if (string(argv[1]) == "LF" || string(argv[1]) == "lf") LF_process();
     else if (string(argv[1]) == "FF" || string(argv[1]) == "ff") FF_process();
+    else if (string(argv[1]) == "LL1" || string(argv[1]) == "ll1") LL1_process();
     else Err();
 
     return 0;
