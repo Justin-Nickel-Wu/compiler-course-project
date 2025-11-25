@@ -102,3 +102,71 @@ void LL1::output_parse_table(const string &filename) {
         out_md << "table th:nth-of-type(" << i << ") {\n    width: " << s << ";\n}\n";
     }
 }
+bool LL1::match(const string &input_str) {
+    Productions temp; // 临时存储输入的产生式,借用Productions类方便输入
+    temp.process_line("@ -> " + input_str + " $"); // 假定开始符号为S，输入结束符号为$。@->用于占位。
+    Production input_prod = temp[0];
+
+    // debug
+    // temp.output_productions("待匹配的输入字符串产生式如下：");
+
+    stack<int> sta;
+    sta.push(prods.get_idx("$"));
+    sta.push(prods.get_start_idx());
+
+    int i = 0;
+    int finish_idx = prods.get_idx("$");
+    while (i < input_prod.rhs.size()) {
+        if (!sta.empty() && sta.top() != finish_idx && !prods.is_non_terminal(sta.top())) { // 如果栈顶是终结符，弹出，输入指针后移
+            sta.pop();
+            i++;
+            continue;
+        }
+
+        if (sta.empty()) { // 栈空但输入未读完，匹配失败
+            return Err(temp, i, "匹配失败：栈空但输入未读完");
+        }
+
+        int input_idx = prods.get_idx(temp.get_token(input_prod.rhs[i]));
+        string input_token = prods.get_token(input_idx);
+        auto key = make_pair(sta.top(), input_idx);
+
+        //debug
+        // cout << "栈大小: " << sta.size() << ", 栈顶符号: " << prods.get_token(sta.top()) << ", 当前输入符号: " << input_token << endl;
+
+        if (input_token == "$" && sta.top() == input_idx) { // "$$"时匹配成功
+            cout << "匹配成功!\n" << endl;
+            return true;
+        }
+
+        if (parse_table.count(key) == 0) { // 表格中无对应产生式，匹配失败
+            return Err(temp, i, "匹配失败：在解析表中找不到对应产生式");
+        }
+
+        int prod_idx = parse_table[key];
+        sta.pop();
+        Production push_prod = prods[prod_idx];
+        for (int j = push_prod.rhs.size() - 1; j >= 0; j--) {
+
+            if (prods.get_token(push_prod.rhs[j]) != "ε") // 遇到ε不入栈
+                sta.push(push_prod.rhs[j]);
+        }
+    }
+
+    return Err(temp, input_prod.rhs.size() - 1, "匹配失败：输入未读完但栈空");
+}
+
+bool LL1::Err(Productions &prods, int pos, const string &msg) {
+    cout << msg << endl;
+    Production prod = prods[0];
+    for (int i = 0; i < prod.rhs.size() - 1; i++) {
+        if (i == pos)
+            cout << " >> " << prods.get_token(prod.rhs[i]) << " << ";
+        else
+            cout << prods.get_token(prod.rhs[i]);
+    }
+    if (pos >= prod.rhs.size() - 1)
+        cout << "「$」";
+    cout << '\n' << endl;
+    return false;
+}

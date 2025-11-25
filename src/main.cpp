@@ -80,13 +80,29 @@ void LL1_process(){
 
     prods.input("./grammar_LL1.in");
     if (ll1.bulid_parse_table()){
-        cout << "LL(1)分析表构建成功!" << endl;
+        cout << "\033[32mLL(1)分析表构建成功!\033[0m\n" << endl;
     }
     else {
-        cout << "LL(1)分析表构建失败!" << endl;
+        cout << "\033[31m输入的不是LL(1)文法,LL(1)分析表构建失败!\033[0m" << endl;
+        return;
     }
 
     ll1.output_parse_table("LL1_parse_table");
+    while (1) {
+        cout << "========================================\n" << endl;
+        cout << "请输入待匹配的字符串 (输入 quit 结束): " << endl;
+        cin >> input_str;
+        cout << endl;
+        if (input_str == "quit")
+            break;
+
+        if (ll1.match(input_str)) {
+            cout << "\033[32m字符串 " << input_str << " 匹配成功!\033[0m\n" << endl;
+        }
+        else {
+            cout << "\033[31m字符串 " << input_str << " 匹配失败!\033[0m\n" << endl;
+        }
+    }
 }
 
 void Err(){

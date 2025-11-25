@@ -14,11 +14,13 @@ private:
     map<pair<int, int>, int> parse_table; // key: <非终结符, 终结符>, value: 产生式编号;
     
     void init();
+    bool Err(Productions &prod, int pos, const string &msg);
 
 public:
     LL1(Productions &productions, FirstFollowCalculator &ffcalc) : prods(productions), ff(ffcalc) {}
     bool bulid_parse_table();
     void output_parse_table(const string &filename);
+    bool match(const string &input_str);
 };
 
 #endif
