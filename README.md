@@ -17,9 +17,11 @@
 - ##### 左递归消除
 - ##### 文法的左公共因子提取
 - ##### FIRST集与FOLLOW集计算
+- ##### LL(1)文法检验与输入串匹配
 
 支持Unicode编码输入与输出。
 以Unicode字符作为符号单位。
+支持形如A'、A'''的表达方式。
 支持 -> 与 → 两种箭头的识别。
 约定输入的第一个产生式左部为开始符号。
 
@@ -27,9 +29,10 @@
 #### 使用指南
 
 命令行输入:
-- make run DFA: 编译并执行正则表达式至最小化DFA的转换。根据命令行提示完成输入后，示意图将会输出至output/。
-- make run RLR: 编译并执行文法的左递归消除。输入文法为./grammar_RLF.in。
-- make run LF: 编译并执行文法的左公共因子提取。输入文法为./grammar_LF.in，中间过程（Trie树）会输出至output/。
-- make run ff：编译并执行文法的FIRST集与FOLLOW集计算。输入文法为./grammar_FF.in。
-- make: 仅编译。
-- make clean: 删除编译结果。 
+- **make run DFA**: 编译并执行正则表达式至最小化DFA的转换。根据命令行提示完成输入后，示意图将会输出至output/。
+- **make run RLR**: 编译并执行文法的左递归消除。输入文法为./grammar_RLF.in。
+- **make run LF**: 编译并执行文法的左公共因子提取。输入文法为./grammar_LF.in，中间过程（Trie树）会输出至output/。
+- **make run FF**：编译并执行文法的FIRST集与FOLLOW集计算。输入文法为./grammar_FF.in。
+- **make run LL1**：编译并执行文法的LL(1)分析表构建，根据命令行提示可完成给予分析表的文法检验。输入文法为./grammar_LL1.in,LL(1)分析表会以markdown形式输出至output/。
+- **make**: 仅编译。
+- **make clean**: 删除编译结果。 

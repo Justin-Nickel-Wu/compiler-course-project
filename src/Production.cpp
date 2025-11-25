@@ -60,14 +60,15 @@ int Productions::get_start_idx() {
 }
 
 Productions::Tokens Productions::utf8_tokens(const std::string& s) {
-    Tokens tokens;
+    // 第一步：UTF-8 单字符切分
+    vector<string> chars;
     for (size_t i = 0; i < s.size(); ) {
         unsigned char c = s[i];
         size_t len = 0;
 
-        if ((c & 0b10000000) == 0){ // ASCII
-            if (c == '-' && i + 1 < s.size() && s[i + 1] == '>') { // 处理->
-                tokens.push_back("→");
+        if ((c & 0b10000000) == 0) { // ASCII
+            if (c == '-' && i + 1 < s.size() && s[i + 1] == '>') {
+                chars.push_back("→");
                 i += 2;
                 continue;
             }
@@ -79,13 +80,38 @@ Productions::Tokens Productions::utf8_tokens(const std::string& s) {
         else {
             throw runtime_error("Invalid UTF-8");
         }
+
         string token = s.substr(i, len);
-        if (token != " ") // 忽略空格
-            tokens.push_back(token);
+        if (token != " ") chars.push_back(token);
         i += len;
     }
-    return tokens;
+
+    // 第二步：把 X + ' + ' + ' 合并成一个 token
+    Tokens final_tokens;
+    for (size_t i = 0; i < chars.size(); i++) {
+        const string& t = chars[i];
+
+        // 如果是字母/非终结符开头，则收集后续连续的 "'"
+        if (t.size() == 1 && (isalpha(t[0]) || t == "_")) {
+            string merged = t;
+            size_t j = i + 1;
+
+            // 收集紧跟的撇号 `'`
+            while (j < chars.size() && chars[j] == "'") {
+                merged += "'";
+                j++;
+            }
+            final_tokens.push_back(merged);
+            i = j - 1;
+        }
+        else {
+            final_tokens.push_back(t);
+        }
+    }
+
+    return final_tokens;
 }
+
 
 void Productions::input(const string &filename){
     ifstream fin(filename);

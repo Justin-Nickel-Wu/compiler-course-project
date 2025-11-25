@@ -118,8 +118,10 @@ bool LL1::match(const string &input_str) {
     int finish_idx = prods.get_idx("$");
     while (i < input_prod.rhs.size()) {
         if (!sta.empty() && sta.top() != finish_idx && !prods.is_non_terminal(sta.top())) { // 如果栈顶是终结符，弹出，输入指针后移
-            sta.pop();
-            i++;
+            if (prods.get_token(sta.top()) != temp.get_token(input_prod.rhs[i])) {
+                return Err(temp, i, "匹配失败：终结符不匹配");
+            }
+            sta.pop(), i++;
             continue;
         }
 

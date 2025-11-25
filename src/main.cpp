@@ -91,7 +91,7 @@ void LL1_process(){
     while (1) {
         cout << "========================================\n" << endl;
         cout << "请输入待匹配的字符串 (输入 quit 结束): " << endl;
-        cin >> input_str;
+        getline(cin, input_str);
         cout << endl;
         if (input_str == "quit")
             break;
