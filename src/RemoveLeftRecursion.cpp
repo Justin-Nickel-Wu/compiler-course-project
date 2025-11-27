@@ -13,21 +13,43 @@ void RemoveLeftRecursion::eliminate_left_recursion(){
             continue; // 处理完同一非终结符的所有产生式后再进行下一步
 
         Production prod = input_prods[i];
-        for (auto Aj: new_prods){ // 执行替换
-            if (Aj.lhs == prod.lhs)
+        int j = 0;
+        while (j < new_prods.size()){ // 执行替换
+            if (new_prods[j].lhs == prod.lhs)
                 break;
+
+            int k = j;
+            vector<Production> Aj_prods; // 把相同左部的产生式取出来
+            while (k < new_prods.size() && new_prods[j].lhs == new_prods[k].lhs)
+                Aj_prods.push_back(new_prods[k]), k++;
+            j = k;
+
+            // cout << "进行替换，使用非终结符: " << new_prods.get_token(Aj_prods[0].lhs) << endl;
+            // for (auto Aj: Aj_prods)
+            //     new_prods.output_production(Aj);
+
             while (!prods_queue.empty()){
                 Production result(prod.lhs), front = prods_queue.front();
                 prods_queue.pop();
-                if (front.rhs[0] == Aj.lhs){ // 需要替换
-                    result.rhs.reserve(front.rhs.size() -1 + Aj.rhs.size());
-                    if (Aj.rhs.size() != 1 || Aj.rhs[0] != input_prods.get_idx("ε")) // Aj产生式为ε, 则不添加Aj.rhs
-                        result.rhs.insert(result.rhs.end(), Aj.rhs.begin(), Aj.rhs.end());
-                    result.rhs.insert(result.rhs.end(), front.rhs.begin() + 1, front.rhs.end());
+                if (front.rhs[0] == Aj_prods[0].lhs){ // 需要替换
+                    for (auto Aj: Aj_prods){
+                        // debug
+                        // cout << "替换产生式: ";
+                        // new_prods.output_production(front);
+                        // cout << "使用产生式: ";
+                        // new_prods.output_production(Aj);
+
+                        result.rhs.reserve(front.rhs.size() -1 + Aj.rhs.size());
+                        if (Aj.rhs.size() != 1 || Aj.rhs[0] != input_prods.get_idx("ε")) // Aj产生式为ε, 则不添加Aj.rhs
+                            result.rhs.insert(result.rhs.end(), Aj.rhs.begin(), Aj.rhs.end());
+                        result.rhs.insert(result.rhs.end(), front.rhs.begin() + 1, front.rhs.end());
+                        new_prods_queue.push(result);   
+                        result.rhs.clear();
+                    } 
                 } else { // 不需要替换
                     result = front;
-                }
-                new_prods_queue.push(result);
+                    new_prods_queue.push(result);
+                }   
             }
             swap(prods_queue, new_prods_queue);
         }
@@ -43,9 +65,10 @@ void RemoveLeftRecursion::eliminate_left_recursion(){
                 have_left_recursion = true;
         }
         // debug temp内容
-        // cout << "temp内容: " << endl;
+        // cout << "待处理产生式集合：" << endl;
         // for (auto p: temp)
-        //     output_production(p);
+        //     new_prods.output_production(p);
+        // cout << endl;
 
         if (have_left_recursion){ // 如果存在左递归，进行消除
             string token = new_prods.get_token(prod.lhs) + "'";
@@ -57,7 +80,8 @@ void RemoveLeftRecursion::eliminate_left_recursion(){
             //  A' → a A' | ε
             for (auto p: temp){
                 // debug输出处理过程
-                // output_production(p, "处理产生式：");
+                // output_production(p, "处理产生式：")
+                // cout << "处理产生式: " << endl;
                 // cout << p.lhs << ' ' << p.rhs.size() << endl;
                 // cout << p.lhs << ' ' << p.rhs[0] << endl;
                 if (p.lhs != p.rhs[0]){
