@@ -1,6 +1,6 @@
 # 编译器
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall
+CXXFLAGS = -std=c++17 -Wall -I$(INC)
 
 # 运行时传参（可通过 `make run ARGS="..."` 或 `make run arg1 arg2` 传入）
 ARGS ?=
@@ -18,6 +18,7 @@ endif
 
 # 源文件目录
 SRCDIR = src
+INC = $(SRCDIR)/include
 OBJDIR = obj
 BINDIR = bin
 
