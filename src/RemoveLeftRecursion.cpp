@@ -1,6 +1,26 @@
 #include "RemoveLeftRecursion.h"
 
 void RemoveLeftRecursion::eliminate_left_recursion(){
+/* 伪代码
+    for i: 待替换产生式集合 // 所有左部相同的产生式
+    begin
+        que A, B
+        A.push(i) 
+        for j: 已处理产生式集合 // 所有左部相同的产生式
+        begin
+            while (A非空)
+                if (A的队头需要替换)
+                    使用j的产生式进行替换，结果入B
+                    A.pop()
+                else
+                    直接将A的队头入B
+                    A.pop()
+            swap(A, B)
+        end
+        消除A中的左递归
+        结果放入已处理产生式集合
+    end
+*/
     new_prods.init(input_prods);
 
     queue<Production> prods_queue;

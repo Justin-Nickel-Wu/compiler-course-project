@@ -58,7 +58,7 @@ void TrieTree::build_from_productions() {
 void TrieTree::output_tree(string title) {
     ofstream out_dot("./output/" + title +".dot");
     out_dot << "digraph Trie {\n";
-    out_dot << "    rankdir=TB;\n";
+    out_dot << "    rankdir=LR;\n";
     out_dot << "    node [shape=circle];\n";
     out_dot << "    label = \""<<title<<"\";\n";
     out_dot << "    labelloc = \"t\";\n";

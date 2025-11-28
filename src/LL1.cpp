@@ -11,6 +11,21 @@ void LL1::init() {
 
 bool LL1::bulid_parse_table() {
     init();
+    /* 构建LL(1)分析表伪代码：
+    for (prod: productions)
+    begin
+        for (symbol: prod.右部)
+        begin
+            获取FIRST(symbol)
+            为分析表[prod.左部, FIRST(symbol) - {ε}]填入prod
+            if (FIRST(symbol)不含ε)
+                break
+        end
+        if (prod.右部所有symbol的FIRST均含ε)
+            为分析表[prod.左部, FOLLOW(prod.左部)]填入prod
+    end
+    */
+
     int epsilon_idx = prods.get_idx("ε");
     for (int i = 0; i < prods.size(); i++) { // 枚举每个产生式
         auto &prod = prods[i];
@@ -109,6 +124,28 @@ bool LL1::match(const string &input_str) {
 
     // debug
     // temp.output_productions("待匹配的输入字符串产生式如下：");
+
+    /*LL(1)匹配伪代码：
+    初始化栈，栈底放入输入结束符号$，栈顶放入文法开始符号
+    for (ch: 输入字符串)
+    begin
+        if (栈顶是终结符)
+            if (栈顶与ch相同)
+                弹出栈顶，继续下一个输入符号
+            else
+                报错，匹配失败
+        
+        if (栈空)
+            报错，匹配失败
+        
+        在分析表中查找[栈顶, ch]对应的产生式
+        if (找不到对应产生式)
+            报错，匹配失败
+        弹出栈顶
+
+        将产生式右部符号逆序入栈(遇到ε不入栈)
+    end
+    */
 
     stack<int> sta;
     sta.push(prods.get_idx("$"));
