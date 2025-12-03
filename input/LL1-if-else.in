@@ -1,3 +1,0 @@
-S → if E then S S'
-S' → else S | ε
-E → id
