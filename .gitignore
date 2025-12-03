@@ -5,6 +5,8 @@
 /output/*
 !/output/.gitkeep
 /.vscode/*
+/generated
+
 in.txt
 out_example.txt
 out.txt
@@ -15,3 +17,4 @@ out.txt
 /mytest
 
 *.dSYM
+.clang-format
