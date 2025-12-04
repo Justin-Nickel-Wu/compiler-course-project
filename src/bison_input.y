@@ -1,6 +1,7 @@
 /* parser.y - SysY 语法分析器 */
 
 %debug
+%glr-parser
 
 %union {
     int ival;
@@ -55,7 +56,7 @@
 
 %%  /* ================== 语法规则区 ================== */
 
-/* TODO: 重写语法规则 */
+/* TODO: 捕捉错误信息 */
 
 /* 编译单元 CompUnit → [ CompUnit ] ( Decl | FuncDef )
  * 这里展开成一个列表

@@ -39,12 +39,12 @@ void part1_test(string filename) {
         }
     }
 }
-extern int yydebug;
 
 void part2_test(string filename) {
     set_input_file(filename);
-    yydebug = 1;
+    yydebug = 0;
     yyparse();
+    Ok("No syntax errors found.");
 }
 
 int main() {

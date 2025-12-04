@@ -13,6 +13,7 @@ extern char *yytext;
 extern int yylex(void);
 
 // Bison部分
+extern int yydebug;
 extern int yychar;
 extern void yyerror(const char *msg);
 
