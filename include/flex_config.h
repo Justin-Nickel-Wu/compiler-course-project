@@ -1,8 +1,7 @@
 #ifndef FLEX_CONFIG_HPP
 #define FLEX_CONFIG_HPP
 
-// #include <FlexLexer.h> // 已经在 generated/lexer.cpp 中包含过了，重新包含会报错
-#include <cstdio>
+#include <stdio.h>
 
 // 定义词法分析器返回的token类型
 enum yytoken {
@@ -50,6 +49,11 @@ enum yytoken {
 };
 
 const char *tokenName(int token);
+
+extern int yylex();
+extern FILE *yyin;
+extern int yylineno;
+extern char *yytext;
 
 // 定义yylval的结构体
 struct TokenValue {

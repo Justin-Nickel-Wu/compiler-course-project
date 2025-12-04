@@ -1,7 +1,7 @@
-%option noyywrap nodefault yylineno c++
+%option noyywrap nodefault yylineno
 
 %{
-#include "flex_config.hpp"
+#include "flex_config.h"
 #include <stdlib.h>
 #include <string.h>
 

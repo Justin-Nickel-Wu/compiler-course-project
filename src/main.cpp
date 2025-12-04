@@ -1,6 +1,5 @@
 #include <bits/stdc++.h>
-#include <FlexLexer.h> // 必须要包含
-#include "flex_config.hpp"
+#include "flex_config.h"
 using namespace std;
 
 template <typename T>
@@ -38,52 +37,51 @@ void part1_test() {
         info(int t, int l, string txt, TokenValue v) : token(t), line(l), text(txt), val(v) {}
     };
 
-    ifstream fin("input.txt");
-    if (!fin.is_open()) {
+    FILE *file = fopen("input.txt", "r");
+    if (!file) {
         cout << red("Failed to open input.txt\n") << endl;
         return;
     }
     cout << green("File opened successfully.\n") << endl;
 
-    yyFlexLexer lexer;
     int token;
     bool something_wrong = false;
     vector<info> tokens;
 
-    lexer.switch_streams(&fin, nullptr);
-    while ((token = lexer.yylex()) != 0) {
+    yyin = file;
+    while ((token = yylex()) != 0) {
         switch (token) {
             case BAD_OCT: {
-                Err('A', lexer.lineno(), "Invalid octal constant: " + string(lexer.YYText()));
+                Err('A', yylineno, "Invalid octal constant: " + string(yytext));
                 something_wrong = true;
                 break;
             }
             case BAD_HEX: {
-                Err('A', lexer.lineno(), "Invalid hex constant: " + string(lexer.YYText()));
+                Err('A', yylineno, "Invalid hex constant: " + string(yytext));
                 something_wrong = true;
                 break;
             }
             case BAD_FLOAT: {
-                Err('A', lexer.lineno(), "Invalid float constant: " + string(lexer.YYText()));
+                Err('A', yylineno, "Invalid float constant: " + string(yytext));
                 something_wrong = true;
                 break;
             }
             case BAD_IDENT: {
-                Err('A', lexer.lineno(), "Invalid identifier: " + string(lexer.YYText()));
+                Err('A', yylineno, "Invalid identifier: " + string(yytext));
                 something_wrong = true;
                 break;
             }
             case UNKNOWN_CHAR: {
-                Err('A', lexer.lineno(), "Unknown character: " + string(lexer.YYText()));
+                Err('A', yylineno, "Unknown character: " + string(yytext));
                 something_wrong = true;
                 break;
             }
             default: {
-                tokens.push_back(info(token, lexer.lineno(), lexer.YYText(), yylval));
+                tokens.push_back(info(token, yylineno, yytext, yylval));
             }
         }
     }
-    fin.close();
+
     if (!something_wrong) {
         Ok("No errors found.");
         for (int i = 0; i < tokens.size(); i++) {
