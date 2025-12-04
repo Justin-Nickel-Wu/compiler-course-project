@@ -1,9 +1,6 @@
-/bin/*
-!/bin/.gitkeep
-/obj/*
-!/obj/.gitkeep
-/output/*
-!/output/.gitkeep
+/bin
+/obj
+/output
 /.vscode/*
 /generated
 
