@@ -1,13 +1,9 @@
-%option noyywrap nodefault yylineno
+%option noyywrap  yylineno
 
 %{
-#include "flex_config.h"
+#include "flex_bison_config.h"
 #include <stdlib.h>
 #include <string.h>
-
-// 自己版的yylval
-// TODO： 使用Bison生成的TokenValue结构体
-TokenValue yylval;
 
 const char *tokenName(int token) {
     switch (token) {

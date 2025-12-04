@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "flex_config.h"
+#include "flex_bison_config.h"
 using namespace std;
 
 template <typename T>
@@ -33,8 +33,8 @@ void part1_test() {
     struct info {
         int token, line;
         string text;
-        TokenValue val;
-        info(int t, int l, string txt, TokenValue v) : token(t), line(l), text(txt), val(v) {}
+        YYSTYPE val;
+        info(int t, int l, string txt, YYSTYPE v) : token(t), line(l), text(txt), val(v) {}
     };
 
     FILE *file = fopen("input.txt", "r");

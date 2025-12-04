@@ -1,89 +1,66 @@
-##############################
-# Tools
-##############################
+# 编译器
+CXX     = g++
+CXXFLAGS = -Iinclude -Igenerated -Wall -g
 
-CXX = g++
-FLEX = flex
-
-CXXFLAGS = -Iinclude -Wall -g
-
-##############################
-# Directories
-##############################
-
+# 目录
 SRC_DIR = src
 GEN_DIR = generated
 OBJ_DIR = obj
 BIN_DIR = bin
 
-##############################
-# Files
-##############################
+# 输入文件
+BISON_SRC = $(SRC_DIR)/bison_input.y
+FLEX_SRC  = $(SRC_DIR)/flex_input.l
+MAIN_SRC  = $(SRC_DIR)/main.cpp
 
-# flex 输入和输出（C 版本输出 .c 文件）
-LEX_SRC = $(SRC_DIR)/flex_input.l
-LEX_OUT = $(GEN_DIR)/lexer.c
+# 输出文件
+BISON_C = $(GEN_DIR)/bison.c
+BISON_H = $(GEN_DIR)/bison.h
+LEXER_C = $(GEN_DIR)/lexer.c
+TARGET  = $(BIN_DIR)/compiler
 
-# 所有 src/*.c 与 src/*.cpp（用户自己写的源代码）
-SRC_C   = $(wildcard $(SRC_DIR)/*.c)
-SRC_CPP = $(wildcard $(SRC_DIR)/*.cpp)
+# OBJS
+OBJS = $(OBJ_DIR)/bison_input.tab.o \
+       $(OBJ_DIR)/lexer.o \
+       $(OBJ_DIR)/main.o
 
-# 编译列表（加入生成的 lexer.c）
-ALL_C   = $(SRC_C) $(LEX_OUT)
-ALL_CPP = $(SRC_CPP)
-
-# => 编译成 .o
-OBJ_C   = $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(ALL_C)))
-OBJ_CPP = $(patsubst %.cpp,$(OBJ_DIR)/%.o,$(notdir $(ALL_CPP)))
-
-OBJS = $(OBJ_C) $(OBJ_CPP)
-
-TARGET = $(BIN_DIR)/compiler
-
-##############################
-# Build rules
-##############################
-
+# 默认目标
 all: $(TARGET)
 
-# flex → C 源码
-$(LEX_OUT): $(LEX_SRC)
+# ======== 生成 Bison 文件：tab.c + tab.h ========
+$(BISON_C) $(BISON_H): $(BISON_SRC)
 	@mkdir -p $(GEN_DIR)
-	$(FLEX) -o $@ $<
+	bison -d -o $(BISON_C) $(BISON_SRC)
 
-# 编译 *.c（生成 *.o）
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+# ======== 生成 Flex 文件：lexer.c（依赖 Bison 头文件） ========
+$(LEXER_C): $(FLEX_SRC) $(BISON_H)
+	@mkdir -p $(GEN_DIR)
+	flex -o $(LEXER_C) $(FLEX_SRC)
+
+# ======== 编译 Bison 输出的 .c 文件（用 C 编译器） ========
+$(OBJ_DIR)/bison_input.tab.o: $(BISON_C) $(BISON_H)
 	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) -Iinclude -Igenerated -Wall -g -c $(BISON_C) -o $@
 
-# 编译 *.cpp（生成 *.o）
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+# ======== 编译 lexer.c（依赖 bison_input.tab.h） ========
+$(OBJ_DIR)/lexer.o: $(LEXER_C) $(BISON_H)
 	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $(LEXER_C) -o $@
 
-# 编译 flex 生成的 lexer.c
-$(OBJ_DIR)/%.o: $(GEN_DIR)/%.c
+# ======== 编译 main.cpp（依赖 bison_input.tab.h） ========
+$(OBJ_DIR)/main.o: $(MAIN_SRC) $(BISON_H)
 	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $(MAIN_SRC) -o $@
 
-##############################
-# Linking
-##############################
-
-$(TARGET): $(LEX_OUT) $(OBJS)
+# ======== 链接 ========
+$(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) -o $@ $(OBJS)
+	$(CXX) $(OBJS) -o $(TARGET)
 
-##############################
-# Commands
-##############################
-
-run: $(TARGET)
-	./$(TARGET)
-
+# ======== 清理 ========
 clean:
-	rm -rf $(OBJ_DIR)/*
-	rm -rf $(GEN_DIR)/*
-	rm -rf $(BIN_DIR)/*
+	rm -rf $(OBJ_DIR) $(GEN_DIR) $(BIN_DIR)
 
-.PHONY: all clean run
+
+run: all
+	$(TARGET)
