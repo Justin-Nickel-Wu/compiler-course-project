@@ -1,5 +1,7 @@
 /* parser.y - SysY 语法分析器 */
 
+%debug
+
 %union {
     int ival;
     double fval;
@@ -53,8 +55,11 @@
 
 %%  /* ================== 语法规则区 ================== */
 
-/* 编译单元 CompUnit → [ CompUnit ] ( Decl | FuncDef ) */
-/* 这里展开成一个列表 */
+/* TODO: 重写语法规则 */
+
+/* 编译单元 CompUnit → [ CompUnit ] ( Decl | FuncDef )
+ * 这里展开成一个列表
+ */
 CompUnit
     : CompUnitItems
     ;
@@ -64,9 +69,10 @@ CompUnitItems
     | CompUnitItems CompUnitItem
     ;
 
+/* 关键：顶层先匹配函数定义，再匹配声明，避免 int main() 被当成 VarDecl */
 CompUnitItem
-    : Decl
-    | FuncDef
+    : FuncDef
+    | Decl
     ;
 
 /* 声明 Decl → ConstDecl | VarDecl */
@@ -288,8 +294,8 @@ UnaryExp
 
 /* UnaryOp → '+' | '−' | '!' */
 UnaryOp
-    : PLUS
-    | MINUS
+    : PLUS  %prec UPLUS
+    | MINUS %prec UMINUS
     | NOT
     ;
 

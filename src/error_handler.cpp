@@ -60,5 +60,7 @@ void flex_error_handler(int token) {
 }
 
 void bison_error_handler() {
-    // TODO
+    Err('B', yylineno, "Syntax error near token '" + string(yytext) + "'");
+    cout << red("\nTerminating due to parser error.") << endl;
+    exit(1);
 }
