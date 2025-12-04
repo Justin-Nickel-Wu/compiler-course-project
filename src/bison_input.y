@@ -10,7 +10,8 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "flex_bison_config.h"  
+#include "flex_bison_config.h"
+#include "error_handler.hpp"  
 %}
 
 /* 错误信息更友好一点 */
@@ -354,6 +355,6 @@ ConstExp
 %%  /* ================== 代码区 ================== */
 
 void yyerror(const char *msg) {
-    fprintf(stderr, "Syntax error at line %d: %s\n", yylineno, msg);
+    bison_error_handler();
 }
 

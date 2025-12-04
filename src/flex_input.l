@@ -2,6 +2,7 @@
 
 %{
 #include "flex_bison_config.h"
+#include "error_handler.hpp"  
 #include <stdlib.h>
 #include <string.h>
 
@@ -142,15 +143,18 @@ WS          [ \t\r\n]+
  /* ---------- 数字错误处理 ---------- */
  /* 非法八进制：例如 0128, 0779, 00089 */
 {BAD_OCT} {
+    flex_error_handler(BAD_OCT);
     return BAD_OCT;
 }
 
 {BAD_HEX} {
+    flex_error_handler(BAD_HEX);
     return BAD_HEX;
 }
 
  /* 多个小数点：如 3.14.15 */
 {BAD_FLOAT} {
+    flex_error_handler(BAD_FLOAT);
     return BAD_FLOAT;
 }
 
@@ -169,6 +173,7 @@ WS          [ \t\r\n]+
 
  /* 错误的标识符：如 123abc, 0x1A */
 {BAD_IDENT}   {
+    flex_error_handler(BAD_IDENT);
     return BAD_IDENT;
 }
 
@@ -201,6 +206,7 @@ WS          [ \t\r\n]+
 
  /* 任何没匹配到的字符，简单报错（或者直接丢弃，看你需求） */
 .               {
+                    flex_error_handler(UNKNOWN_CHAR);
                     return UNKNOWN_CHAR;
                 }
 

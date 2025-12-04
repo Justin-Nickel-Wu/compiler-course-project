@@ -11,7 +11,7 @@ BIN_DIR = bin
 # 输入文件
 BISON_SRC = $(SRC_DIR)/bison_input.y
 FLEX_SRC  = $(SRC_DIR)/flex_input.l
-MAIN_SRC  = $(SRC_DIR)/main.cpp
+SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 
 # 输出文件
 BISON_C = $(GEN_DIR)/bison.c
@@ -19,10 +19,13 @@ BISON_H = $(GEN_DIR)/bison.h
 LEXER_C = $(GEN_DIR)/lexer.c
 TARGET  = $(BIN_DIR)/compiler
 
+# 把 src/*.cpp 映射为 obj/*.o
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
+
 # OBJS
 OBJS = $(OBJ_DIR)/bison_input.tab.o \
        $(OBJ_DIR)/lexer.o \
-       $(OBJ_DIR)/main.o
+	   $(OBJ_FILES)
 
 # 默认目标
 all: $(TARGET)
@@ -47,10 +50,10 @@ $(OBJ_DIR)/lexer.o: $(LEXER_C) $(BISON_H)
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $(LEXER_C) -o $@
 
-# ======== 编译 main.cpp（依赖 bison_input.tab.h） ========
-$(OBJ_DIR)/main.o: $(MAIN_SRC) $(BISON_H)
+# ======== 编译 src下文件（依赖 bison_input.tab.h） ========
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(BISON_H)
 	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $(MAIN_SRC) -o $@
+	$(CXX) $(CXXFLAGS) -Iinclude -Igenerated -c $< -o $@
 
 # ======== 链接 ========
 $(TARGET): $(OBJS)
