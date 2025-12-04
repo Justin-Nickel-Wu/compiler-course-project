@@ -51,7 +51,7 @@ const char *tokenName(int token) {
         case INT_CONST: return "INT_CONST";
         case IDENT: return "IDENT";
         case BAD_IDENT: return "BAD_IDENT";
-        default: return "UNKNOWN_TOKEN";
+        default: return "UNKNOWN_CHAR";
     }
 }
 %}
@@ -205,9 +205,7 @@ WS          [ \t\r\n]+
 
  /* 任何没匹配到的字符，简单报错（或者直接丢弃，看你需求） */
 .               {
-                    fprintf(stderr, "Unknown character '%s' at line %d\n",
-                            yytext, yylineno);
-                    /* 也可以选择 return ERROR; 视 parser.y 是否定义 ERROR */
+                    return UNKNOWN_CHAR;
                 }
 
 %%

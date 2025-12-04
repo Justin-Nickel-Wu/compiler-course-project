@@ -43,7 +43,7 @@ void part1_test() {
         cout << red("Failed to open input.txt\n") << endl;
         return;
     }
-    cout << green("File opened successfully.") << endl;
+    cout << green("File opened successfully.\n") << endl;
 
     yyFlexLexer lexer;
     int token;
@@ -70,6 +70,11 @@ void part1_test() {
             }
             case BAD_IDENT: {
                 Err('A', lexer.lineno(), "Invalid identifier: " + string(lexer.YYText()));
+                something_wrong = true;
+                break;
+            }
+            case UNKNOWN_CHAR: {
+                Err('A', lexer.lineno(), "Unknown character: " + string(lexer.YYText()));
                 something_wrong = true;
                 break;
             }

@@ -45,7 +45,8 @@ enum yytoken {
     BAD_OCT,
     BAD_HEX,
     BAD_FLOAT,
-    BAD_IDENT
+    BAD_IDENT,
+    UNKNOWN_CHAR
 };
 
 const char *tokenName(int token);
