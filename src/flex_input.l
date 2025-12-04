@@ -44,32 +44,54 @@ const char *tokenName(int token) {
         case RBRACK: return "RBRACK";
         case LBRACE: return "LBRACE";
         case RBRACE: return "RBRACE";
+        case BAD_OCT: return "BAD_OCT";
+        case BAD_HEX: return "BAD_HEX";
+        case BAD_FLOAT: return "BAD_FLOAT";
         case FLOAT_CONST: return "FLOAT_CONST";
         case INT_CONST: return "INT_CONST";
         case IDENT: return "IDENT";
+        case BAD_IDENT: return "BAD_IDENT";
         default: return "UNKNOWN_TOKEN";
     }
 }
 %}
 
 /* ---------- 定义部分 ---------- */
-
 /* 标识符：首字符是字母或下划线，后面字母/数字/下划线 */
 LETTER      [A-Za-z_]
 DIGIT       [0-9]
 IDENT       {LETTER}({LETTER}|{DIGIT})*
+BAD_IDENT   {DIGIT}({LETTER}|{DIGIT})*
+/* 带错误发现的数字匹配 */
+/* 十六进制 */
+HEX_PREFIX      0[xX]
+HEX_DIG         [0-9a-fA-F]
 
-/* 整型常量：十进制 / 八进制 / 十六进制 */
-DECIMAL     [1-9][0-9]*
-OCTAL       0[0-7]*
-HEXA        0[xX][0-9a-fA-F]+
-INTCONST    ({DECIMAL}|{OCTAL}|{HEXA})
+/* 八进制合法部分 */
+OCT_DIG         [0-7]
 
-/* 浮点常量：非常粗略的 C 风格 float，够用就行 */
-F1          [0-9]+\.[0-9]*([eE][+-]?[0-9]+)?
-F2          \.[0-9]+([eE][+-]?[0-9]+)?
-F3          [0-9]+[eE][+-]?[0-9]+
-FLOATCONST  ({F1}|{F2}|{F3})
+/* 八进制错误：如 0, 00, 012 后面出现 8 或 9 */
+BAD_OCT       0[0-7]*[89][0-9]*
+
+/* 十六进制错误：如 0x1G, 0X2Z */
+BAD_HEX     {HEX_PREFIX}(({HEX_DIG}*[g-zG-Z][0-9a-zA-Z]*)*)
+
+/* 十进制 */
+DECIMAL         [1-9][0-9]*
+
+/* 正常整数构造 */
+INTCONST        ({HEX_PREFIX}{HEX_DIG}+|0|0{OCT_DIG}+|{DECIMAL})
+
+/* 浮点 */
+/* 错误浮点：多个小数点，例如 3.14.15 */
+BAD_FLOAT       [0-9]+(\.[0-9]+){2,}
+
+/* 合法浮点构造 */
+F1              [0-9]+\.[0-9]*([eE][+-]?[0-9]+)?
+F2              \.[0-9]+([eE][+-]?[0-9]+)?
+F3              [0-9]+[eE][+-]?[0-9]+
+
+FLOATCONST      ({F1}|{F2}|{F3})
 
 /* 空白符：空格、制表、换行等 */
 WS          [ \t\r\n]+
@@ -121,18 +143,38 @@ WS          [ \t\r\n]+
 "{"             { return LBRACE; }
 "}"             { return RBRACE; }
 
- /* 数值常量 */
-{FLOATCONST}    {
-                    /* 改成你 parser.y 里面 float 字段的名字 */
-                    yylval.fval = strtof(yytext, NULL);
-                    return FLOAT_CONST;
-                }
+ /* ---------- 数字错误处理 ---------- */
+ /* 非法八进制：例如 0128, 0779, 00089 */
+{BAD_OCT} {
+    return BAD_OCT;
+}
 
-{INTCONST}      {
-                    /* strtol base=0 支持十进制/八进制/十六进制 */
-                    yylval.ival = (int)strtol(yytext, NULL, 0);
-                    return INT_CONST;
-                }
+{BAD_HEX} {
+    return BAD_HEX;
+}
+
+ /* 多个小数点：如 3.14.15 */
+{BAD_FLOAT} {
+    return BAD_FLOAT;
+}
+
+ /* ---------- 正确数字 ---------- */
+  /* 整数：十进制 / 八进制 / 十六进制 */
+{INTCONST}    {
+    yylval.ival = (int)strtol(yytext, NULL, 0);
+    return INT_CONST;
+}
+
+ /* 浮点 */
+{FLOATCONST}  {
+    yylval.fval = strtof(yytext, NULL);
+    return FLOAT_CONST;
+}
+
+ /* 错误的标识符：如 123abc, 0x1A */
+{BAD_IDENT}   {
+    return BAD_IDENT;
+}
 
  /* 标识符 */
 {IDENT}         {

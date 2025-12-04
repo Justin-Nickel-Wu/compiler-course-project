@@ -8,6 +8,7 @@
 /generated
 
 in.txt
+input.txt
 out_example.txt
 out.txt
 .DS_Store

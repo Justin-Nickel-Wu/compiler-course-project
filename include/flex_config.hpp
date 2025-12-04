@@ -41,7 +41,11 @@ enum yytoken {
     RBRACE,
     FLOAT_CONST,
     INT_CONST,
-    IDENT
+    IDENT,
+    BAD_OCT,
+    BAD_HEX,
+    BAD_FLOAT,
+    BAD_IDENT
 };
 
 const char *tokenName(int token);
