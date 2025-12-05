@@ -2,6 +2,7 @@
 
 %debug
 %glr-parser
+%locations
 
 %union {
     int ival;
@@ -18,7 +19,7 @@
 %}
 
 /* 错误信息更友好一点 */
-%define parse.error verbose
+%define parse.error custom
 
 /* 处理悬空 else 的优先级声明 */
 %nonassoc LOWER_THAN_ELSE
@@ -34,14 +35,14 @@
 %token EQ NEQ LE GE AND OR
 
 /* 算术运算符 */
-%token PLUS MINUS MUL DIV MOD
+%token PLUS "+" MINUS "-" MUL "*" DIV "/" MOD "%"
 
 /* 其他运算符/分隔符 */
 %token LT GT ASSIGN NOT
-%token SEMICOLON COMMA
-%token LPARENT RPARENT
-%token LBRACK RBRACK
-%token LBRACE RBRACE
+%token SEMICOLON ";" COMMA ","
+%token LPARENT "(" RPARENT ")"
+%token LBRACK "[" RBRACK "]"
+%token LBRACE "{" RBRACE "}"
 
 /* 常量与标识符（你的 .l 已经给 yylval.ival / fval / ident 赋值） */
 %token INT_CONST
@@ -365,3 +366,40 @@ void yyerror(const char *msg) {
     bison_error_handler();
 }
 
+static int
+yyreport_syntax_error(const yypcontext_t *ctx)
+{
+    /* 1. 获取出错位置（行号） */
+    const YYLTYPE *loc = yypcontext_location(ctx);
+    int line = loc ? loc->first_line : -1;
+    string msg = "Syntax error";
+
+    /* 2. 获取真正的“unexpected token” */
+    yysymbol_kind_t unexpected = yypcontext_token(ctx);
+
+    /* 3. 打印 unexpected token（使用你自己的规则） */
+    if (unexpected != YYSYMBOL_YYEMPTY) {
+        const char *name = yysymbol_name(unexpected);  /* Bison 内部名字，例如 "+" 或 ";" */
+        msg += ", unexpected \"" + string(name) + "\"";
+    }
+
+    /* 4. 获取 expected token 列表（最多展示 5 个） */
+    yysymbol_kind_t expected[8];
+    int n = yypcontext_expected_tokens(ctx, expected, 8);
+
+    if (n > 0) {
+        msg += ", expecting ";
+        for (int i = 0; i < n; i++) {
+            if (i > 0) 
+                msg += " or ";
+
+            /* 打印 expected token，自定义规则 */
+            msg += "\"";
+            msg += yysymbol_name(expected[i]);
+            msg += "\"";
+        }
+    }
+
+    bison_error_handler(msg.c_str());
+    return 0;   /* 0 = 告诉 Bison “继续正常的错误恢复行为” */
+}

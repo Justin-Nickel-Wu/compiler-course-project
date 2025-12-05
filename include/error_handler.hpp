@@ -38,6 +38,6 @@ void Ok(string desc);
 void flex_error_handler(int token);
 
 // Bison错误处理函数
-void bison_error_handler();
+void bison_error_handler(const char *msg = "");
 
 #endif

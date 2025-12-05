@@ -42,7 +42,6 @@ void part1_test(string filename) {
 
 void part2_test(string filename) {
     set_input_file(filename);
-    yydebug = 0;
     yyparse();
     Ok("No syntax errors found.");
 }
@@ -51,6 +50,7 @@ int main() {
     // part1_test("input.txt");
     cout << endl
          << endl;
+    yydebug = 1;
     part2_test("input.txt");
     return 0;
 }
