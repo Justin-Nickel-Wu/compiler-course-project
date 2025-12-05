@@ -4,13 +4,8 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-// 是否仅进行词法分析检查
-// 初始值为 false
-extern bool ONLY_CHECK_LEXER;
-
-// 词法分析时是否发现错误
-// 初始值为 false
 extern bool WRONG_FOUND_IN_LEXER;
+extern bool WRONG_FOUND_IN_PARSER;
 
 // 输出红色字符串
 template <typename T>

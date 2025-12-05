@@ -14,7 +14,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "flex_bison_config.h"
+#include "flex_bison_config.hpp"
 #include "error_handler.hpp"  
 %}
 
@@ -56,9 +56,6 @@
 %start CompUnit
 
 %%  /* ================== 语法规则区 ================== */
-
-/* TODO: 捕捉错误信息 */
-
 /* 编译单元 CompUnit → [ CompUnit ] ( Decl | FuncDef )
  * 这里展开成一个列表
  */
@@ -69,6 +66,7 @@ CompUnit
 CompUnitItems
     : /* empty */
     | CompUnitItems CompUnitItem
+    | CompUnitItems error    /* 恢复错误 */
     ;
 
 /* 关键：顶层先匹配函数定义，再匹配声明，避免 int main() 被当成 VarDecl */
@@ -200,6 +198,7 @@ FuncFParamDimsOpt
 /* Block → '{' { BlockItem } '}' */
 Block
     : LBRACE BlockItemListOpt RBRACE
+    | LBRACE error RBRACE // 恢复错误
     ;
 
 BlockItemListOpt
@@ -210,6 +209,7 @@ BlockItemListOpt
 BlockItemList
     : BlockItem
     | BlockItemList BlockItem
+    | BlockItemList error  /* 跳过坏语句 */
     ;
 
 /* BlockItem → Decl | Stmt */
@@ -244,6 +244,9 @@ Stmt
 
     /* return [Exp] ';' */
     | RETURN ExpOpt SEMICOLON
+
+    /* 恢复错误 */
+    | error SEMICOLON 
     ;
 
 ExpOpt
@@ -296,8 +299,8 @@ UnaryExp
 
 /* UnaryOp → '+' | '−' | '!' */
 UnaryOp
-    : PLUS  %prec UPLUS
-    | MINUS %prec UMINUS
+    : PLUS
+    | MINUS
     | NOT
     ;
 
@@ -366,12 +369,24 @@ void yyerror(const char *msg) {
     bison_error_handler();
 }
 
+int rank_token(yysymbol_kind_t token) {
+    // TODO: 添加更多规则来排序输出的expected信息
+    switch (token) {
+        case YYSYMBOL_INT_CONST: return 1;
+        case YYSYMBOL_FLOAT_CONST: return 2;
+        default: return int(token);
+    }
+    return int(token);
+}
+
+bool cmp(yysymbol_kind_t a, yysymbol_kind_t b) {
+    return rank_token(a) < rank_token(b);
+}
+
 static int
 yyreport_syntax_error(const yypcontext_t *ctx)
 {
-    /* 1. 获取出错位置（行号） */
-    const YYLTYPE *loc = yypcontext_location(ctx);
-    int line = loc ? loc->first_line : -1;
+    /* 1. 初始化错误信息 */
     string msg = "Syntax error";
 
     /* 2. 获取真正的“unexpected token” */
@@ -386,10 +401,11 @@ yyreport_syntax_error(const yypcontext_t *ctx)
     /* 4. 获取 expected token 列表（最多展示 5 个） */
     yysymbol_kind_t expected[8];
     int n = yypcontext_expected_tokens(ctx, expected, 8);
+    sort(expected, expected+n, cmp);
 
     if (n > 0) {
         msg += ", expecting ";
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < min(2, n); i++) {
             if (i > 0) 
                 msg += " or ";
 
@@ -399,6 +415,7 @@ yyreport_syntax_error(const yypcontext_t *ctx)
             msg += "\"";
         }
     }
+    msg += '.';
 
     bison_error_handler(msg.c_str());
     return 0;   /* 0 = 告诉 Bison “继续正常的错误恢复行为” */

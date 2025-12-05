@@ -2,7 +2,7 @@
 #define FLEX_BISON_CONFIG_HPP
 
 #include <stdio.h>
-#include "bison.h"
+#include "bison.hpp"
 
 const char *tokenName(int token);
 

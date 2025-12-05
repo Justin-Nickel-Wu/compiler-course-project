@@ -1,7 +1,6 @@
-%option noyywrap  yylineno
-
+%option noyywrap  yylineno noinput nounput
 %{
-#include "flex_bison_config.h"
+#include "flex_bison_config.hpp"
 #include "error_handler.hpp"  
 #include <stdlib.h>
 #include <string.h>

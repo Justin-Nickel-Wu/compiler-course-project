@@ -14,9 +14,9 @@ FLEX_SRC  = $(SRC_DIR)/flex_input.l
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 
 # 输出文件
-BISON_C = $(GEN_DIR)/bison.c
-BISON_H = $(GEN_DIR)/bison.h
-LEXER_C = $(GEN_DIR)/lexer.c
+BISON_C = $(GEN_DIR)/bison.cpp
+BISON_H = $(GEN_DIR)/bison.hpp
+LEXER_C = $(GEN_DIR)/lexer.cpp
 TARGET  = $(BIN_DIR)/compiler
 
 # 把 src/*.cpp 映射为 obj/*.o

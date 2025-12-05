@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "flex_bison_config.h"
+#include "flex_bison_config.hpp"
 #include "error_handler.hpp"
 using namespace std;
 
@@ -43,14 +43,17 @@ void part1_test(string filename) {
 void part2_test(string filename) {
     set_input_file(filename);
     yyparse();
-    Ok("No syntax errors found.");
+    if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER)
+        cout << red("\nParsing completed with errors.") << endl;
+    else
+        Ok("No syntax errors found.");
 }
 
 int main() {
     // part1_test("input.txt");
     cout << endl
          << endl;
-    yydebug = 1;
+    // yydebug = 1;
     part2_test("input.txt");
     return 0;
 }
