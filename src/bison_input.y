@@ -395,7 +395,10 @@ yyreport_syntax_error(const yypcontext_t *ctx)
     /* 3. 打印 unexpected token（使用你自己的规则） */
     if (unexpected != YYSYMBOL_YYEMPTY) {
         const char *name = yysymbol_name(unexpected);  /* Bison 内部名字，例如 "+" 或 ";" */
-        msg += ", unexpected \"" + string(name) + "\"";
+        if (strlen(name) == 1)
+            msg += ", unexpected \"" + string(name) + "\"";
+        else
+            msg += ", unexpected <" + string(name) + ">";
     }
 
     /* 4. 获取 expected token 列表（最多展示 5 个） */
@@ -410,9 +413,9 @@ yyreport_syntax_error(const yypcontext_t *ctx)
                 msg += " or ";
 
             /* 打印 expected token，自定义规则 */
-            msg += "\"";
+            msg += strlen(yysymbol_name(expected[i])) == 1 ? "\"" : "<";
             msg += yysymbol_name(expected[i]);
-            msg += "\"";
+            msg += strlen(yysymbol_name(expected[i])) == 1 ? "\"" : ">";
         }
     }
     msg += '.';
