@@ -5,9 +5,12 @@
 %locations
 
 %union {
+    // TODO： 删减信息，信息全部保存至parse tree的nodes中
     int ival;
     double fval;
     char *ident;
+    // 节点编号
+    int node_id;
 }
 
 /* ===== C/C++ 代码区（只进 .c/.cpp，不进头文件） ===== */
@@ -16,6 +19,7 @@
 #include <stdlib.h>
 #include "flex_bison_config.hpp"
 #include "error_handler.hpp"  
+#include "parse_tree.hpp"
 %}
 
 /* 错误信息更友好一点 */
@@ -28,64 +32,61 @@
 /* ====== token 声明，对应你的 flex_input.l ====== */
 
 /* 关键字 */
-%token CONST INT FLOAT VOID
-%token IF ELSE WHILE BREAK CONTINUE RETURN
+%token <node_id> CONST INT FLOAT VOID
+%token <node_id> IF ELSE WHILE BREAK CONTINUE RETURN
 
 /* 比较、逻辑运算符 */
-%token EQ NEQ LE GE AND OR
+%token <node_id> EQ NEQ LE GE AND OR
 
 /* 算术运算符 */
-%token PLUS "+" MINUS "-" MUL "*" DIV "/" MOD "%"
+%token <node_id> PLUS "+" MINUS "-" MUL "*" DIV "/" MOD "%"
 
 /* 其他运算符/分隔符 */
-%token LT GT ASSIGN NOT
-%token SEMICOLON ";" COMMA ","
-%token LPARENT "(" RPARENT ")"
-%token LBRACK "[" RBRACK "]"
-%token LBRACE "{" RBRACE "}"
+%token <node_id> LT GT ASSIGN NOT
+%token <node_id> SEMICOLON ";" COMMA ","
+%token <node_id> LPARENT "(" RPARENT ")"
+%token <node_id> LBRACK "[" RBRACK "]"
+%token <node_id> LBRACE "{" RBRACE "}"
 
 /* 常量与标识符（你的 .l 已经给 yylval.ival / fval / ident 赋值） */
-%token INT_CONST
-%token FLOAT_CONST
-%token IDENT
+%token <node_id> INT_CONST
+%token <node_id> FLOAT_CONST
+%token <node_id> IDENT
 
 /* 一些错误 token（可以先不在文法中用） */
-%token BAD_OCT BAD_HEX BAD_FLOAT BAD_IDENT UNKNOWN_CHAR
+%token <node_id> BAD_OCT BAD_HEX BAD_FLOAT BAD_IDENT UNKNOWN_CHAR
 
 /* 文法开始符号 */
 %start CompUnit
 
+%type <node_id> CompUnit Decl ConstDecl ConstDefList ConstDef ConstInitVal ConstInitValListOpt ConstInitValList
+%type <node_id> BType VarDecl VarDefList VarDef InitVal FuncDef FuncType FuncRParamsOpt InitValList
+%type <node_id> FuncFParams FuncFParam Block BlockItem BlockItemList Stmt InitValListOpt
+%type <node_id> Exp Cond LVal PrimaryExp Number UnaryExp UnaryOp VarDimList ConstDimList
+%type <node_id> FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp ConstExp ExpOpt LValDimsOpt
+
+
 %%  /* ================== 语法规则区 ================== */
-/* 编译单元 CompUnit → [ CompUnit ] ( Decl | FuncDef )
- * 这里展开成一个列表
- */
+/* CompUnit → [CompUnit](Decl | FuncDef) */
+// TODO: 输出时记得打平
 CompUnit
-    : CompUnitItems
+    : CompUnit CompUnit { $$ = make_node("CompUnit", -1, -1, $1, $2); set_root($$); }
+    | FuncDef           { $$ = make_node("CompUnit", -1, -1, $1); set_root($$); }
+    | Decl              { $$ = make_node("CompUnit", -1, -1, $1); set_root($$); }
     ;
 
-CompUnitItems
-    : /* empty */
-    | CompUnitItems CompUnitItem
-    | CompUnitItems error    /* 恢复错误 */
-    ;
-
-/* 关键：顶层先匹配函数定义，再匹配声明，避免 int main() 被当成 VarDecl */
-CompUnitItem
-    : FuncDef
-    | Decl
-    ;
-
-/* 声明 Decl → ConstDecl | VarDecl */
+/* Decl → ConstDecl | VarDecl */
 Decl
     : ConstDecl
     | VarDecl
     ;
 
-/* 常量声明 ConstDecl → 'const' BType ConstDef { ',' ConstDef } ';' */
+/* ConstDecl → 'const' BType ConstDefList ';' */
 ConstDecl
     : CONST BType ConstDefList SEMICOLON
     ;
 
+/* ConstDefList → ConstDef { ',' ConstDef } */
 ConstDefList
     : ConstDef
     | ConstDefList COMMA ConstDef
@@ -103,7 +104,7 @@ ConstDimList
 
 /* ConstInitVal → ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}' */
 ConstInitVal
-    : ConstExp
+    : ConstExp                          
     | LBRACE ConstInitValListOpt RBRACE
     ;
 
@@ -153,7 +154,7 @@ InitVal
     ;
 
 InitValListOpt
-    : /* empty */
+    : /* empty */ 
     | InitValList
     ;
 
@@ -164,18 +165,24 @@ InitValList
 
 /* 函数定义 FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
 FuncDef
-    : FuncType IDENT LPARENT FuncFParamsOpt RPARENT Block
+    : FuncType IDENT LPARENT FuncFParams RPARENT Block { 
+        $$ = make_node("FuncDef", -1, -1, $1, $2, $3, $4, $5, $6);
+    }
+    | FuncType IDENT LPARENT RPARENT Block {
+        $$ = make_node("FuncDef", -1, -1, $1, $2, $3, $4, $5);
+    }
     ;
 
 FuncType
-    : VOID
-    | INT
-    | FLOAT
-    ;
-
-FuncFParamsOpt
-    : /* empty */
-    | FuncFParams
+    : VOID {
+        $$ = make_node("FuncType", -1, -1, $1);
+    }
+    | INT {
+        $$ = make_node("FuncType", -1, -1, $1);
+    }
+    | FLOAT {
+        $$ = make_node("FuncType", -1, -1, $1);
+    }
     ;
 
 /* FuncFParams → FuncFParam { ',' FuncFParam } */
@@ -197,17 +204,18 @@ FuncFParamDimsOpt
 
 /* Block → '{' { BlockItem } '}' */
 Block
-    : LBRACE BlockItemListOpt RBRACE
+    : LBRACE RBRACE 
+    | LBRACE BlockItemList RBRACE {
+        $$ = make_node("Block", -1, -1, $1, $2, $3);
+    }
     | LBRACE error RBRACE // 恢复错误
     ;
 
-BlockItemListOpt
-    : /* empty */
-    | BlockItemList
-    ;
-
+// TODO: 输出时记得打平
 BlockItemList
-    : BlockItem
+    : BlockItem {
+        $$ = make_node("BlockItemList", -1, -1, $1);
+    }
     | BlockItemList BlockItem
     | BlockItemList error  /* 跳过坏语句 */
     ;
@@ -215,13 +223,17 @@ BlockItemList
 /* BlockItem → Decl | Stmt */
 BlockItem
     : Decl
-    | Stmt
+    | Stmt {
+        $$ = make_node("BlockItem", -1, -1, $1);
+    }
     ;
 
 /* Stmt 各种形式 */
-Stmt
+Stmt:
     /* 赋值语句：LVal '=' Exp ';' */
-    : LVal ASSIGN Exp SEMICOLON
+    LVal ASSIGN Exp SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2, $3, $4);
+    }
 
     /* 表达式语句：[Exp] ';' */
     | ExpOpt SEMICOLON
@@ -256,7 +268,9 @@ ExpOpt
 
 /* 表达式 Exp → AddExp */
 Exp
-    : AddExp
+    : AddExp {
+        $$ = make_node("Exp", -1, -1, $1);
+    }
     ;
 
 /* 条件表达式 Cond → LOrExp */
@@ -266,18 +280,29 @@ Cond
 
 /* LVal → Ident {'[' Exp ']'} */
 LVal
-    : IDENT LValDimsOpt
+    : IDENT LValDimsOpt {
+        $$ = make_node("LVal", -1, -1, $1, $2);
+    }
+    | IDENT {
+        $$ = make_node("LVal", -1, -1, $1);
+    }
     ;
 
 LValDimsOpt
-    : /* empty */
-    | LValDimsOpt LBRACK Exp RBRACK
+    : LBRACK Exp RBRACK {
+        $$ = make_node("LValDimsOpt", -1, -1, $1, $2, $3);
+    }
+    | LValDimsOpt LBRACK Exp RBRACK {
+        $$ = make_node("LValDimsOpt", -1, -1, $1, $2, $3, $4);
+    }
     ;
 
 /* PrimaryExp → '(' Exp ')' | LVal | Number */
 PrimaryExp
     : LPARENT Exp RPARENT
-    | LVal
+    | LVal {
+        $$ = make_node("PrimaryExp", -1, -1, $1);
+    }
     | Number
     ;
 
@@ -292,7 +317,9 @@ Number
  *          | UnaryOp UnaryExp
  */
 UnaryExp
-    : PrimaryExp
+    : PrimaryExp {
+        $$ = make_node("UnaryExp", -1, -1, $1);
+    }
     | IDENT LPARENT FuncRParamsOpt RPARENT
     | UnaryOp UnaryExp
     ;
@@ -317,7 +344,9 @@ FuncRParams
 
 /* MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp */
 MulExp
-    : UnaryExp
+    : UnaryExp {
+        $$ = make_node("MulExp", -1, -1, $1);
+    }
     | MulExp MUL UnaryExp
     | MulExp DIV UnaryExp
     | MulExp MOD UnaryExp
@@ -326,7 +355,9 @@ MulExp
 /* AddExp → MulExp | AddExp ('+' | '−') MulExp */
 AddExp
     : MulExp
-    | AddExp PLUS MulExp
+    | AddExp PLUS MulExp {
+        $$ = make_node("AddExp", -1, -1, $1, $2, $3);
+    }
     | AddExp MINUS MulExp
     ;
 

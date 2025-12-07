@@ -2,6 +2,7 @@
 %{
 #include "flex_bison_config.hpp"
 #include "error_handler.hpp"  
+#include "parse_tree.hpp"
 #include <stdlib.h>
 #include <string.h>
 
@@ -99,7 +100,7 @@ WS          [ \t\r\n]+
 %%
  /* 关键字 */
 "const"         { return CONST; }
-"int"           { return INT; }
+"int"           { yylval.node_id = make_leaf("INT", yylineno, INT); return INT; }
 "float"         { return FLOAT; }
 "void"          { return VOID; }
 
@@ -118,7 +119,7 @@ WS          [ \t\r\n]+
 "&&"            { return AND; }
 "||"            { return OR; }
 
-"+"             { return PLUS; }
+"+"             { yylval.node_id = make_leaf("PLUS", yylineno, PLUS); return PLUS; }
 "-"             { return MINUS; }
 "*"             { return MUL; }
 "/"             { return DIV; }
@@ -126,18 +127,18 @@ WS          [ \t\r\n]+
 
 "<"             { return LT; }
 ">"             { return GT; }
-"="             { return ASSIGN; }
+"="             { yylval.node_id = make_leaf("ASSIGN", yylineno, ASSIGN); return ASSIGN; }
 "!"             { return NOT; }
 
-";"             { return SEMICOLON; }
-","             { return COMMA; }
+";"             { yylval.node_id = make_leaf("SEMICOLON", yylineno, SEMICOLON); return SEMICOLON; }
+","             { yylval.node_id = make_leaf("COMMA", yylineno, COMMA);         return COMMA; }
 
-"("             { return LPARENT; }
-")"             { return RPARENT; }
-"["             { return LBRACK; }
-"]"             { return RBRACK; }
-"{"             { return LBRACE; }
-"}"             { return RBRACE; }
+"("             { yylval.node_id = make_leaf("LPARENT", yylineno, LPARENT); return LPARENT; }
+")"             { yylval.node_id = make_leaf("RPARENT", yylineno, RPARENT); return RPARENT; }
+"["             { yylval.node_id = make_leaf("LBRACK", yylineno, LBRACK); return LBRACK; }
+"]"             { yylval.node_id = make_leaf("RBRACK", yylineno, RBRACK); return RBRACK; }
+"{"             { yylval.node_id = make_leaf("LBRACE", yylineno, LBRACE); return LBRACE; }
+"}"             { yylval.node_id = make_leaf("RBRACE", yylineno, RBRACE); return RBRACE; }
 
  /* ---------- 数字错误处理 ---------- */
  /* 非法八进制：例如 0128, 0779, 00089 */
@@ -178,8 +179,7 @@ WS          [ \t\r\n]+
 
  /* 标识符 */
 {IDENT}         {
-                    /* 改成你 parser.y 里的字段名，比如 ident / id / str 等 */
-                    yylval.ident = strdup(yytext);
+                    yylval.node_id = make_ident_leaf("IDENT", yylineno, IDENT, strdup(yytext));
                     return IDENT;
                 }
 

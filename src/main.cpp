@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "flex_bison_config.hpp"
 #include "error_handler.hpp"
+#include "parse_tree.hpp"
 using namespace std;
 
 void set_input_file(string filename) {
@@ -47,6 +48,8 @@ void part2_test(string filename) {
         cout << red("\nParsing completed with errors.") << endl;
     else
         Ok("No syntax errors found.");
+    cout << "root: " << GLOBAL_PARSE_TREE.get_root() << endl;
+    GLOBAL_PARSE_TREE.debug(GLOBAL_PARSE_TREE.get_root());
 }
 
 int main() {
