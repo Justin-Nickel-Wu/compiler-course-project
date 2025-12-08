@@ -29,7 +29,7 @@
 
 /* 关键字 */
 %token <node_id> CONST INT FLOAT VOID
-%token <node_id> IF ELSE WHILE BREAK CONTINUE RETURN
+%token <node_id> IF WHILE BREAK CONTINUE RETURN
 
 /* 比较、逻辑运算符 */
 %token <node_id> EQ NEQ LE GE AND OR
@@ -49,114 +49,177 @@
 %token <node_id> FLOAT_CONST
 %token <node_id> IDENT
 
-/* 一些错误 token（可以先不在文法中用） */
+/* 一些错误 token（bison中未使用，用于flex识别错误） */
 %token <node_id> BAD_OCT BAD_HEX BAD_FLOAT BAD_IDENT UNKNOWN_CHAR
 
 /* 文法开始符号 */
 %start CompUnit
 
-%type <node_id> CompUnit Decl ConstDecl ConstDefList ConstDef ConstInitVal ConstInitValListOpt ConstInitValList
-%type <node_id> BType VarDecl VarDefList VarDef InitVal FuncDef FuncType FuncRParamsOpt InitValList
-%type <node_id> FuncFParams FuncFParam Block BlockItem BlockItemList Stmt InitValListOpt
+%type <node_id> CompUnit Decl ConstDecl ConstDefList ConstDef ConstInitVal  ConstInitValList
+%type <node_id> BType VarDecl VarDefList VarDef InitVal FuncDef FuncType InitValList
+%type <node_id> FuncFParams FuncFParam Block BlockItem BlockItemList Stmt FuncFParamDimsList
 %type <node_id> Exp Cond LVal PrimaryExp Number UnaryExp UnaryOp VarDimList ConstDimList
-%type <node_id> FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp ConstExp ExpOpt LValDimsOpt
+%type <node_id> FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp ConstExp LValDimsOpt
 
 
 %%  /* ================== 语法规则区 ================== */
 /* CompUnit → [CompUnit](Decl | FuncDef) */
-// TODO: 输出时记得打平
 CompUnit
-    : CompUnit CompUnit { $$ = make_node("CompUnit", -1, -1, $1, $2); set_root($$); }
-    | FuncDef           { $$ = make_node("CompUnit", -1, -1, $1); set_root($$); }
-    | Decl              { $$ = make_node("CompUnit", -1, -1, $1); set_root($$); }
+    : CompUnit CompUnit { 
+        $$ = make_node("CompUnit", -1, -1, $1, $2);
+        set_root($$);
+    }
+    | FuncDef {
+        $$ = make_node("CompUnit", -1, -1, $1);
+        set_root($$);
+    }
+    | Decl {
+        $$ = make_node("CompUnit", -1, -1, $1);
+        set_root($$);
+    }
     ;
 
 /* Decl → ConstDecl | VarDecl */
 Decl
-    : ConstDecl
-    | VarDecl
+    : ConstDecl {
+        $$ = make_node("Decl", -1, -1, $1); 
+    }
+    | VarDecl {
+        $$ = make_node("Decl", -1, -1, $1); 
+    }
     ;
 
 /* ConstDecl → 'const' BType ConstDefList ';' */
 ConstDecl
-    : CONST BType ConstDefList SEMICOLON
+    : CONST BType ConstDefList SEMICOLON {
+        $$ = make_node("ConstDecl", -1, -1, $1, $2, $3, $4);
+    }
     ;
 
 /* ConstDefList → ConstDef { ',' ConstDef } */
 ConstDefList
-    : ConstDef
-    | ConstDefList COMMA ConstDef
+    : ConstDef                    {
+        $$ = make_node("ConstDefList", -1, -1, $1);
+    }
+    | ConstDefList COMMA ConstDef {
+        $$ = make_node("ConstDefList", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* ConstDef → Ident { '[' ConstExp ']' } '=' ConstInitVal */
 ConstDef
-    : IDENT ConstDimList ASSIGN ConstInitVal
+    : IDENT ConstDimList ASSIGN ConstInitVal { 
+        $$ = make_node("ConstDef", -1, -1, $1, $2, $3, $4);
+    }
+    | IDENT ASSIGN ConstInitVal { 
+        $$ = make_node("ConstDef", -1, -1, $1, $2, $3);
+    }
     ;
 
 ConstDimList
-    : /* empty */
-    | ConstDimList LBRACK ConstExp RBRACK
+    : LBRACK ConstExp RBRACK {
+        $$ = make_node("ConstDimList", -1, -1, $1, $2, $3);
+    }
+    | ConstDimList LBRACK ConstExp RBRACK {
+        $$ = make_node("ConstDimList", -1, -1, $1, $2, $3, $4);
+    }
     ;
 
 /* ConstInitVal → ConstExp | '{' [ ConstInitVal { ',' ConstInitVal } ] '}' */
 ConstInitVal
-    : ConstExp                          
-    | LBRACE ConstInitValListOpt RBRACE
-    ;
-
-ConstInitValListOpt
-    : /* empty */
-    | ConstInitValList
+    : ConstExp {
+        $$ = make_node("ConstInitVal", -1, -1, $1);
+    }
+    | LBRACE RBRACE {
+        $$ = make_node("ConstInitVal", -1, -1, $1, $2);
+    }
+    | LBRACE ConstInitValList RBRACE {
+        $$ = make_node("ConstInitVal", -1, -1, $1, $2, $3);
+    }
     ;
 
 ConstInitValList
-    : ConstInitVal
-    | ConstInitValList COMMA ConstInitVal
+    : ConstInitVal {
+        $$ = make_node("ConstInitValList", -1, -1, $1);
+    }
+    | ConstInitValList COMMA ConstInitVal {
+        $$ = make_node("ConstInitValList", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* 基本类型 BType → 'int' | 'float' */
 BType
-    : INT
-    | FLOAT
+    : INT {
+        $$ = make_node("BType", -1, -1, $1);
+    }
+    | FLOAT {
+        $$ = make_node("BType", -1, -1, $1);
+    }
     ;
 
 /* 变量声明 VarDecl → BType VarDef { ',' VarDef } ';' */
 VarDecl
-    : BType VarDefList SEMICOLON
+    : BType VarDefList SEMICOLON {
+        $$ = make_node("VarDecl", -1, -1, $1, $2, $3);
+    }
     ;
 
 VarDefList
-    : VarDef
-    | VarDefList COMMA VarDef
+    : VarDef {
+        $$ = make_node("VarDefList", -1, -1, $1);
+    }
+    | VarDefList COMMA VarDef {
+        $$ = make_node("VarDefList", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* VarDef → Ident { '[' ConstExp ']' }
  *        | Ident { '[' ConstExp ']' } '=' InitVal
  */
 VarDef
-    : IDENT VarDimList
-    | IDENT VarDimList ASSIGN InitVal
+    : IDENT VarDimList {
+        $$ = make_node("VarDef", -1, -1, $1, $2);
+    }
+    | IDENT VarDimList ASSIGN InitVal {
+        $$ = make_node("VarDef", -1, -1, $1, $2, $3, $4);
+    }
+    | IDENT {
+        $$ = make_node("VarDef", -1, -1, $1);
+    }
+    | IDENT ASSIGN InitVal {
+        $$ = make_node("VarDef", -1, -1, $1, $2, $3);
+    }
     ;
 
 VarDimList
-    : /* empty */
-    | VarDimList LBRACK ConstExp RBRACK
+    : LBRACK ConstExp RBRACK {
+        $$ = make_node("VarDimList", -1, -1, $1, $2, $3);
+    }
+    | VarDimList LBRACK ConstExp RBRACK {
+        $$ = make_node("VarDimList", -1, -1, $1, $2, $3, $4);
+    }
     ;
 
 /* InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}' */
 InitVal
-    : Exp
-    | LBRACE InitValListOpt RBRACE
-    ;
-
-InitValListOpt
-    : /* empty */ 
-    | InitValList
+    : Exp {
+        $$ = make_node("InitVal", -1, -1, $1);
+    }
+    | LBRACE RBRACE {
+        $$ = make_node("InitVal", -1, -1, $1, $2);
+    }
+    | LBRACE InitValList RBRACE {
+        $$ = make_node("InitVal", -1, -1, $1, $2, $3);
+    }
     ;
 
 InitValList
-    : InitVal
-    | InitValList COMMA InitVal
+    : InitVal {
+        $$ = make_node("InitValList", -1, -1, $1);
+    }
+    | InitValList COMMA InitVal {
+        $$ = make_node("InitValList", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* 函数定义 FuncDef → FuncType Ident '(' [FuncFParams] ')' Block */
@@ -183,19 +246,34 @@ FuncType
 
 /* FuncFParams → FuncFParam { ',' FuncFParam } */
 FuncFParams
-    : FuncFParam
-    | FuncFParams COMMA FuncFParam
+    : FuncFParam {
+        $$ = make_node("FuncFParams", -1, -1, $1);
+    }
+    | FuncFParams COMMA FuncFParam {
+        $$ = make_node("FuncFParams", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* FuncFParam → BType Ident ['[' ']' { '[' Exp ']' }] */
 FuncFParam
-    : BType IDENT
-    | BType IDENT LBRACK RBRACK FuncFParamDimsOpt
+    : BType IDENT {
+        $$ = make_node("FuncFParam", -1, -1, $1, $2);
+    }
+    | BType IDENT LBRACK RBRACK {
+        $$ = make_node("FuncFParam", -1, -1, $1, $2, $3, $4);
+    }
+    | BType IDENT LBRACK RBRACK FuncFParamDimsList {
+        $$ = make_node("FuncFParam", -1, -1, $1, $2, $3, $4, $5);
+    }
     ;
 
-FuncFParamDimsOpt
-    : /* empty */
-    | FuncFParamDimsOpt LBRACK Exp RBRACK
+FuncFParamDimsList
+    : LBRACK Exp RBRACK {
+        $$ = make_node("FuncFParamDimsList", -1, -1, $1, $2, $3);
+    }
+    | FuncFParamDimsList LBRACK Exp RBRACK {
+        $$ = make_node("FuncFParamDimsList", -1, -1, $1, $2, $3, $4);
+    }
     ;
 
 /* Block → '{' { BlockItem } '}' */
@@ -209,7 +287,6 @@ Block
     | LBRACE error RBRACE // 恢复错误
     ;
 
-// TODO: 输出时记得打平
 BlockItemList
     : BlockItem {
         $$ = make_node("BlockItemList", -1, -1, $1);
@@ -222,7 +299,9 @@ BlockItemList
 
 /* BlockItem → Decl | Stmt */
 BlockItem
-    : Decl
+    : Decl {
+        $$ = make_node("BlockItem", -1, -1, $1);
+    }
     | Stmt {
         $$ = make_node("BlockItem", -1, -1, $1);
     }
@@ -236,34 +315,53 @@ Stmt:
     }
 
     /* 表达式语句：[Exp] ';' */
-    | ExpOpt SEMICOLON
+    | SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1);
+    }
+    | Exp SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2);
+    }
 
     /* 语句块 */
-    | Block
+    | Block {
+        $$ = make_node("Stmt", -1, -1, $1);
+    }
 
     /* if (Cond) Stmt [else Stmt] */
-    | IF LPARENT Cond RPARENT Stmt %prec LOWER_THAN_ELSE
-    | IF LPARENT Cond RPARENT Stmt ELSE Stmt
+    | IF LPARENT Cond RPARENT Stmt %prec LOWER_THAN_ELSE {
+        $$ = make_node("Stmt", -1, -1, $1, $2, $3, $4, $5);
+    }
+    | IF LPARENT Cond RPARENT Stmt ELSE Stmt {
+        $$ = make_node("Stmt", -1, -1, $1, $2, $3, $4, $5, $6, $7);
+    }
 
     /* while (Cond) Stmt */
-    | WHILE LPARENT Cond RPARENT Stmt
+    | WHILE LPARENT Cond RPARENT Stmt {
+        $$ = make_node("Stmt", -1, -1, $1, $2, $3, $4, $5);
+    }
 
     /* break; */
-    | BREAK SEMICOLON
+    | BREAK SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2);
+    }
 
     /* continue; */
-    | CONTINUE SEMICOLON
+    | CONTINUE SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2);
+    }
 
     /* return [Exp] ';' */
-    | RETURN ExpOpt SEMICOLON
+    | RETURN SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2);
+    }
+    | RETURN Exp SEMICOLON {
+        $$ = make_node("Stmt", -1, -1, $1, $2, $3);
+    }
 
     /* 恢复错误 */
-    | error SEMICOLON 
-    ;
-
-ExpOpt
-    : /* empty */
-    | Exp
+    | error SEMICOLON {
+        $$ = 0; /* 该节点不加入语法树 */
+    }
     ;
 
 /* 表达式 Exp → AddExp */
@@ -275,7 +373,9 @@ Exp
 
 /* 条件表达式 Cond → LOrExp */
 Cond
-    : LOrExp
+    : LOrExp {
+        $$ = make_node("Cond", -1, -1, $1);
+    }
     ;
 
 /* LVal → Ident {'[' Exp ']'} */
@@ -299,7 +399,9 @@ LValDimsOpt
 
 /* PrimaryExp → '(' Exp ')' | LVal | Number */
 PrimaryExp
-    : LPARENT Exp RPARENT
+    : LPARENT Exp RPARENT {
+        $$ = make_node("PrimaryExp", -1, -1, $1, $2, $3);
+    }
     | LVal {
         $$ = make_node("PrimaryExp", -1, -1, $1);
     }
@@ -326,7 +428,12 @@ UnaryExp
     : PrimaryExp {
         $$ = make_node("UnaryExp", -1, -1, $1);
     }
-    | IDENT LPARENT FuncRParamsOpt RPARENT
+    | IDENT LPARENT RPARENT {
+        $$ = make_node("UnaryExp", -1, -1, $1, $2, $3);
+    }
+    | IDENT LPARENT FuncRParams RPARENT {
+        $$ = make_node("UnaryExp", -1, -1, $1, $2, $3, $4);
+    }
     | UnaryOp UnaryExp {
         $$ = make_node("UnaryExp", -1, -1, $1, $2);
     }
@@ -345,15 +452,13 @@ UnaryOp
     }
     ;
 
-/* FuncRParams → Exp { ',' Exp } */
-FuncRParamsOpt
-    : /* empty */
-    | FuncRParams
-    ;
-
 FuncRParams
-    : Exp
-    | FuncRParams COMMA Exp
+    : Exp {
+        $$ = make_node("FuncRParams", -1, -1, $1);
+    }
+    | FuncRParams COMMA Exp {
+        $$ = make_node("FuncRParams", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp */
@@ -361,51 +466,87 @@ MulExp
     : UnaryExp {
         $$ = make_node("MulExp", -1, -1, $1);
     }
-    | MulExp MUL UnaryExp
-    | MulExp DIV UnaryExp
-    | MulExp MOD UnaryExp
+    | MulExp MUL UnaryExp {
+        $$ = make_node("MulExp", -1, -1, $1, $2, $3);
+    }
+    | MulExp DIV UnaryExp {
+        $$ = make_node("MulExp", -1, -1, $1, $2, $3);
+    }
+    | MulExp MOD UnaryExp {
+        $$ = make_node("MulExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* AddExp → MulExp | AddExp ('+' | '−') MulExp */
 AddExp
-    : MulExp
+    : MulExp {
+        $$ = make_node("AddExp", -1, -1, $1);
+    }
     | AddExp PLUS MulExp {
         $$ = make_node("AddExp", -1, -1, $1, $2, $3);
     }
-    | AddExp MINUS MulExp
+    | AddExp MINUS MulExp {
+        $$ = make_node("AddExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp */
 RelExp
-    : AddExp
-    | RelExp LT AddExp
-    | RelExp GT AddExp
-    | RelExp LE AddExp
-    | RelExp GE AddExp
+    : AddExp {
+        $$ = make_node("RelExp", -1, -1, $1);
+    }
+    | RelExp LT AddExp {
+        $$ = make_node("RelExp", -1, -1, $1, $2, $3);
+    }
+    | RelExp GT AddExp {
+        $$ = make_node("RelExp", -1, -1, $1, $2, $3);
+    }
+    | RelExp LE AddExp {
+        $$ = make_node("RelExp", -1, -1, $1, $2, $3);
+    }
+    | RelExp GE AddExp {
+        $$ = make_node("RelExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* EqExp → RelExp | EqExp ('==' | '!=') RelExp */
 EqExp
-    : RelExp
-    | EqExp EQ RelExp
-    | EqExp NEQ RelExp
+    : RelExp {
+        $$ = make_node("EqExp", -1, -1, $1);
+    }
+    | EqExp EQ RelExp {
+        $$ = make_node("EqExp", -1, -1, $1, $2, $3);
+    }
+    | EqExp NEQ RelExp {
+        $$ = make_node("EqExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* LAndExp → EqExp | LAndExp '&&' EqExp */
 LAndExp
-    : EqExp
-    | LAndExp AND EqExp
+    : EqExp {
+        $$ = make_node("LAndExp", -1, -1, $1);
+    }
+    | LAndExp AND EqExp {
+        $$ = make_node("LAndExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* LOrExp → LAndExp | LOrExp '||' LAndExp */
 LOrExp
-    : LAndExp
-    | LOrExp OR LAndExp
+    : LAndExp {
+        $$ = make_node("LOrExp", -1, -1, $1);
+    }
+    | LOrExp OR LAndExp {
+        $$ = make_node("LOrExp", -1, -1, $1, $2, $3);
+    }
     ;
 
 /* 常量表达式 ConstExp → AddExp */
 ConstExp
-    : AddExp
+    : AddExp {
+        $$ = make_node("ConstExp", -1, -1, $1);
+    }
     ;
 
 %%  /* ================== 代码区 ================== */

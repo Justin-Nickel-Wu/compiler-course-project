@@ -99,46 +99,46 @@ WS          [ \t\r\n]+
 /* ---------- 规则部分 ---------- */
 %%
  /* 关键字 */
-"const"         { return CONST; }
-"int"           { yylval.node_id = make_leaf("INT", yylineno, INT); return INT; }
-"float"         { return FLOAT; }
-"void"          { return VOID; }
+"const"         { yylval.node_id = make_leaf("CONST", yylineno, CONST);       return CONST; }
+"int"           { yylval.node_id = make_leaf("INT", yylineno, INT);           return INT; }
+"float"         { yylval.node_id = make_leaf("FLOAT", yylineno, FLOAT);       return FLOAT; }
+"void"          { yylval.node_id = make_leaf("VOID", yylineno, VOID);         return VOID; }
 
-"if"            { return IF; }
-"else"          { return ELSE; }
-"while"         { return WHILE; }
-"break"         { return BREAK; }
-"continue"      { return CONTINUE; }
-"return"        { return RETURN; }
+"if"            { yylval.node_id = make_leaf("IF", yylineno, IF);             return IF; }
+"else"          { yylval.node_id = make_leaf("ELSE", yylineno, ELSE);         return ELSE; }
+"while"         { yylval.node_id = make_leaf("WHILE", yylineno, WHILE);       return WHILE; }
+"break"         { yylval.node_id = make_leaf("BREAK", yylineno, BREAK);       return BREAK; }
+"continue"      { yylval.node_id = make_leaf("CONTINUE", yylineno, CONTINUE); return CONTINUE; }
+"return"        { yylval.node_id = make_leaf("RETURN", yylineno, RETURN);     return RETURN; }
 
  /* 运算符和分隔符 */
-"=="            { return EQ; }
-"!="            { return NEQ; }
-"<="            { return LE; }
-">="            { return GE; }
-"&&"            { return AND; }
-"||"            { return OR; }
+"=="            { yylval.node_id = make_leaf("EQ(==)", yylineno, EQ);   return EQ; }
+"!="            { yylval.node_id = make_leaf("NEQ(!=)", yylineno, NEQ); return NEQ; }
+"<="            { yylval.node_id = make_leaf("LE(<=)", yylineno, LE);   return LE; }
+">="            { yylval.node_id = make_leaf("GE(>=)", yylineno, GE);   return GE; }
+"&&"            { yylval.node_id = make_leaf("AND(&&)", yylineno, AND); return AND; }
+"||"            { yylval.node_id = make_leaf("OR(||)", yylineno, OR);   return OR; }
 
-"+"             { yylval.node_id = make_leaf("PLUS(+)", yylineno, PLUS); return PLUS; }
+"+"             { yylval.node_id = make_leaf("PLUS(+)", yylineno, PLUS);   return PLUS; }
 "-"             { yylval.node_id = make_leaf("MINUS(-)", yylineno, MINUS); return MINUS; }
-"*"             { yylval.node_id = make_leaf("MUL(*)", yylineno, MUL); return MUL; }
-"/"             { yylval.node_id = make_leaf("DIV(/)", yylineno, DIV); return DIV; }
-"%"             { yylval.node_id = make_leaf("MOD(%)", yylineno, MOD); return MOD; }
+"*"             { yylval.node_id = make_leaf("MUL(*)", yylineno, MUL);     return MUL; }
+"/"             { yylval.node_id = make_leaf("DIV(/)", yylineno, DIV);     return DIV; }
+"%"             { yylval.node_id = make_leaf("MOD(%)", yylineno, MOD);     return MOD; }
 
-"<"             { yylval.node_id = make_leaf("LT(<)", yylineno, LT); return LT; }
-">"             { yylval.node_id = make_leaf("GT(>)", yylineno, GT); return GT; }
+"<"             { yylval.node_id = make_leaf("LT(<)", yylineno, LT);         return LT; }
+">"             { yylval.node_id = make_leaf("GT(>)", yylineno, GT);         return GT; }
 "="             { yylval.node_id = make_leaf("ASSIGN(=)", yylineno, ASSIGN); return ASSIGN; }
-"!"             { yylval.node_id = make_leaf("NOT(!)", yylineno, NOT); return NOT; }
+"!"             { yylval.node_id = make_leaf("NOT(!)", yylineno, NOT);       return NOT; }
 
 ";"             { yylval.node_id = make_leaf("SEMICOLON", yylineno, SEMICOLON); return SEMICOLON; }
 ","             { yylval.node_id = make_leaf("COMMA", yylineno, COMMA);         return COMMA; }
 
 "("             { yylval.node_id = make_leaf("LPARENT", yylineno, LPARENT); return LPARENT; }
 ")"             { yylval.node_id = make_leaf("RPARENT", yylineno, RPARENT); return RPARENT; }
-"["             { yylval.node_id = make_leaf("LBRACK", yylineno, LBRACK); return LBRACK; }
-"]"             { yylval.node_id = make_leaf("RBRACK", yylineno, RBRACK); return RBRACK; }
-"{"             { yylval.node_id = make_leaf("LBRACE", yylineno, LBRACE); return LBRACE; }
-"}"             { yylval.node_id = make_leaf("RBRACE", yylineno, RBRACE); return RBRACE; }
+"["             { yylval.node_id = make_leaf("LBRACK", yylineno, LBRACK);   return LBRACK; }
+"]"             { yylval.node_id = make_leaf("RBRACK", yylineno, RBRACK);   return RBRACK; }
+"{"             { yylval.node_id = make_leaf("LBRACE", yylineno, LBRACE);   return LBRACE; }
+"}"             { yylval.node_id = make_leaf("RBRACE", yylineno, RBRACE);   return RBRACE; }
 
  /* ---------- 数字错误处理 ---------- */
  /* 非法八进制：例如 0128, 0779, 00089 */
