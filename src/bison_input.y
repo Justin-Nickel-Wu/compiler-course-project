@@ -5,10 +5,6 @@
 %locations
 
 %union {
-    // TODO： 删减信息，信息全部保存至parse tree的nodes中
-    int ival;
-    double fval;
-    char *ident;
     // 节点编号
     int node_id;
 }
@@ -307,13 +303,19 @@ PrimaryExp
     | LVal {
         $$ = make_node("PrimaryExp", -1, -1, $1);
     }
-    | Number
+    | Number {
+        $$ = make_node("PrimaryExp", -1, -1, $1);
+    }
     ;
 
 /* Number → IntConst | FloatConst */
 Number
-    : INT_CONST
-    | FLOAT_CONST
+    : INT_CONST {
+        $$ = make_node("Number", -1, -1, $1);
+    }
+    | FLOAT_CONST {
+        $$ = make_node("Number", -1, -1, $1);
+    }
     ;
 
 /* UnaryExp → PrimaryExp
@@ -325,14 +327,22 @@ UnaryExp
         $$ = make_node("UnaryExp", -1, -1, $1);
     }
     | IDENT LPARENT FuncRParamsOpt RPARENT
-    | UnaryOp UnaryExp
+    | UnaryOp UnaryExp {
+        $$ = make_node("UnaryExp", -1, -1, $1, $2);
+    }
     ;
 
 /* UnaryOp → '+' | '−' | '!' */
 UnaryOp
-    : PLUS
-    | MINUS
-    | NOT
+    : PLUS {
+        $$ = make_node("UnaryOp", -1, -1, $1);
+    }
+    | MINUS {
+        $$ = make_node("UnaryOp", -1, -1, $1);
+    }
+    | NOT {
+        $$ = make_node("UnaryOp", -1, -1, $1);
+    }
     ;
 
 /* FuncRParams → Exp { ',' Exp } */

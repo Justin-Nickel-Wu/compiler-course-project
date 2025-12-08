@@ -62,4 +62,35 @@ void set_root(int root_id);
 // 输出全局语法树的dot格式文件并转为png图片
 void to_dot(const string &filename);
 
+// 判断token是否为类型
+bool isTypeToken(int token);
+
+// 判断token是否为常量
+bool isConstantToken(int token);
+
+// 判断token是否为标识符
+bool isIdentToken(int token);
+
+// 判断token是否为运算符
+bool isOperatorToken(int token);
+
+// 辅助dot格式输出信息结构体
+struct DotNodeInfo {
+    string label, shape, style, fillcolor;
+
+    // reset
+    void reset() {
+        label.clear();
+        shape.clear();
+        style.clear();
+        fillcolor.clear();
+    }
+
+    // 构造函数
+    DotNodeInfo() { reset(); }
+
+    // 输出到流中
+    void output(ostream &out, int node_id);
+};
+
 #endif

@@ -119,16 +119,16 @@ WS          [ \t\r\n]+
 "&&"            { return AND; }
 "||"            { return OR; }
 
-"+"             { yylval.node_id = make_leaf("PLUS", yylineno, PLUS); return PLUS; }
-"-"             { return MINUS; }
-"*"             { return MUL; }
-"/"             { return DIV; }
-"%"             { return MOD; }
+"+"             { yylval.node_id = make_leaf("PLUS(+)", yylineno, PLUS); return PLUS; }
+"-"             { yylval.node_id = make_leaf("MINUS(-)", yylineno, MINUS); return MINUS; }
+"*"             { yylval.node_id = make_leaf("MUL(*)", yylineno, MUL); return MUL; }
+"/"             { yylval.node_id = make_leaf("DIV(/)", yylineno, DIV); return DIV; }
+"%"             { yylval.node_id = make_leaf("MOD(%)", yylineno, MOD); return MOD; }
 
-"<"             { return LT; }
-">"             { return GT; }
-"="             { yylval.node_id = make_leaf("ASSIGN", yylineno, ASSIGN); return ASSIGN; }
-"!"             { return NOT; }
+"<"             { yylval.node_id = make_leaf("LT(<)", yylineno, LT); return LT; }
+">"             { yylval.node_id = make_leaf("GT(>)", yylineno, GT); return GT; }
+"="             { yylval.node_id = make_leaf("ASSIGN(=)", yylineno, ASSIGN); return ASSIGN; }
+"!"             { yylval.node_id = make_leaf("NOT(!)", yylineno, NOT); return NOT; }
 
 ";"             { yylval.node_id = make_leaf("SEMICOLON", yylineno, SEMICOLON); return SEMICOLON; }
 ","             { yylval.node_id = make_leaf("COMMA", yylineno, COMMA);         return COMMA; }
@@ -161,13 +161,13 @@ WS          [ \t\r\n]+
  /* ---------- 正确数字 ---------- */
   /* 整数：十进制 / 八进制 / 十六进制 */
 {INTCONST}    {
-    yylval.ival = (int)strtol(yytext, NULL, 0);
+    yylval.node_id = make_int_leaf("INT_CONST", yylineno, INT_CONST, (int)strtol(yytext, NULL, 0));
     return INT_CONST;
 }
 
  /* 浮点 */
 {FLOATCONST}  {
-    yylval.fval = strtof(yytext, NULL);
+    yylval.node_id = make_float_leaf("FLOAT_CONST", yylineno, FLOAT_CONST, atof(yytext));
     return FLOAT_CONST;
 }
 

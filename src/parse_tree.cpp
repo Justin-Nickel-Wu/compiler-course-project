@@ -2,6 +2,7 @@
 using namespace std;
 
 #include "parse_tree.hpp"
+#include "bison.hpp"
 
 ParseTree GLOBAL_PARSE_TREE;
 
@@ -37,6 +38,11 @@ void ParseTree::debug(int node_id) {
     }
 }
 
+// 辅助函数，生成节点行号信息字符串 line -> "(line)"
+string line_info(int line) {
+    return "(" + to_string(line) + ")";
+}
+
 void ParseTree::to_dot(const string &filename) {
     ofstream out("output/" + filename + ".dot");
 
@@ -46,12 +52,46 @@ void ParseTree::to_dot(const string &filename) {
 
     // 格式化输出所有节点
     for (int i = 1; i < nodes.size(); i++) {
-        out << "    ";
-        out << "node" << i << " [label=\"" << nodes[i].name << "\"";
-        if (nodes[i].token_type != -1) {
-            out << ", shape=box" << ", color=green";
+        DotNodeInfo info;
+        if (nodes[i].token_type == -1) {
+            info.label = nodes[i].name + line_info(nodes[i].line);
+        } else {
+            if (isTypeToken(nodes[i].token_type)) {
+                // 处理Type（类型）节点
+                info.label = "TYPE" + line_info(nodes[i].line) + ": ";
+                info.label += (nodes[i].token_type == INT)   ? "int" :
+                              (nodes[i].token_type == FLOAT) ? "float" :
+                                                               "void";
+                info.shape = "box3d", info.style = "filled", info.fillcolor = "#ffdddd";
+
+            } else if (isConstantToken(nodes[i].token_type)) {
+                // 处理Constant（常量）节点
+                info.label = (nodes[i].token_type == INT_CONST) ? "INT_CONST" :
+                                                                  "FLOAT_CONST";
+                info.label += line_info(nodes[i].line) + ": ";
+                info.label += (nodes[i].token_type == INT_CONST) ? to_string(nodes[i].ival) :
+                                                                   to_string(nodes[i].fval);
+                info.shape = "box3d", info.style = "filled", info.fillcolor = "#fff2b3";
+
+            } else if (isIdentToken(nodes[i].token_type)) {
+                // 处理Ident（标识符）节点
+                info.label = nodes[i].name + line_info(nodes[i].line) + ": ";
+                info.label += "\\\"" + string(nodes[i].ident) + "\\\"";
+                info.shape = "box3d", info.style = "filled", info.fillcolor = "#ddffdd";
+
+            } else if (isOperatorToken(nodes[i].token_type)) {
+                // 处理Operator（运算符）节点
+                info.label = "OP" + line_info(nodes[i].line) + ":\\n";
+                info.label += nodes[i].name;
+                info.shape = "box3d", info.style = "filled", info.fillcolor = "#89c4f4";
+
+            } else {
+                // 剩下的一定是符号Token
+                info.label = nodes[i].name + line_info(nodes[i].line);
+                info.shape = "box", info.style = "filled", info.fillcolor = "#eeeeee";
+            }
         }
-        out << "];" << endl;
+        info.output(out, i);
     }
 
     // 输出连边信息
@@ -106,4 +146,34 @@ void set_root(int root_id) {
 
 void to_dot(const string &filename) {
     GLOBAL_PARSE_TREE.to_dot(filename);
+}
+
+bool isTypeToken(int token) {
+    return token == INT || token == FLOAT || token == VOID;
+}
+
+bool isConstantToken(int token) {
+    return token == INT_CONST || token == FLOAT_CONST;
+}
+
+bool isIdentToken(int token) {
+    return token == IDENT;
+}
+
+bool isOperatorToken(int token) {
+    // 结合generated/bison.hpp中的定义
+    return (token >= EQ && token <= NOT);
+}
+
+void DotNodeInfo::output(ostream &out, int node_id) {
+    out << "    node" << node_id;
+    out << " [";
+    out << "label=\"" << label << "\"";
+    if (!shape.empty())
+        out << ", shape=" << shape;
+    if (!style.empty())
+        out << ", style=" << style;
+    if (!fillcolor.empty())
+        out << ", fillcolor=\"" << fillcolor << "\"";
+    out << "];" << endl;
 }
