@@ -31,6 +31,8 @@ struct ParseTree {
     int get_root() const { return root; }
     // DEBUG输出对应编号节点及其子树
     void debug(int node_id);
+    // 输出dot格式的语法树,并转为png图片
+    void to_dot(const string &filename);
 };
 
 // 全局唯一的语法树对象
@@ -56,5 +58,8 @@ int make_ident_leaf(const string &name, int line, int token_type, const char *id
 
 // 设置全局语法树的根节点
 void set_root(int root_id);
+
+// 输出全局语法树的dot格式文件并转为png图片
+void to_dot(const string &filename);
 
 #endif

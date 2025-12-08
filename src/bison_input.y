@@ -204,7 +204,9 @@ FuncFParamDimsOpt
 
 /* Block → '{' { BlockItem } '}' */
 Block
-    : LBRACE RBRACE 
+    : LBRACE RBRACE {
+        $$ = make_node("Block", -1, -1, $1, $2);
+    }
     | LBRACE BlockItemList RBRACE {
         $$ = make_node("Block", -1, -1, $1, $2, $3);
     }
@@ -216,7 +218,9 @@ BlockItemList
     : BlockItem {
         $$ = make_node("BlockItemList", -1, -1, $1);
     }
-    | BlockItemList BlockItem
+    | BlockItemList BlockItem {
+        $$ = make_node("BlockItemList", -1, -1, $1, $2);
+    }
     | BlockItemList error  /* 跳过坏语句 */
     ;
 

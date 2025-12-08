@@ -58,5 +58,6 @@ int main() {
          << endl;
     // yydebug = 1;
     part2_test("input.txt");
+    to_dot("parse_tree");
     return 0;
 }

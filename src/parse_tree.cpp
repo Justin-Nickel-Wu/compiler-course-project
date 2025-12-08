@@ -37,6 +37,46 @@ void ParseTree::debug(int node_id) {
     }
 }
 
+void ParseTree::to_dot(const string &filename) {
+    ofstream out("output/" + filename + ".dot");
+
+    out << "digraph ParseTree {" << endl;
+
+    out << "    graph [ordering=\"out\"];" << endl; // 保持节点插入顺序
+
+    // 格式化输出所有节点
+    for (int i = 1; i < nodes.size(); i++) {
+        out << "    ";
+        out << "node" << i << " [label=\"" << nodes[i].name << "\"";
+        if (nodes[i].token_type != -1) {
+            out << ", shape=box" << ", color=green";
+        }
+        out << "];" << endl;
+    }
+
+    // 输出连边信息
+    queue<int> q;
+    q.push(root);
+    while (!q.empty()) {
+        int curr = q.front();
+        q.pop();
+        for (auto son : nodes[curr].son) {
+            if (son == 0) {
+                cout << "Error: null son node found in to_dot()." << endl;
+                exit(1);
+            }
+            out << "    ";
+            out << "node" << curr << " -> " << "node" << son << ';' << endl;
+            q.push(son);
+        }
+    }
+
+    out << '}' << endl;
+    out.close();
+    // 转为png图片
+    system(("dot -Tpng output/" + filename + ".dot -o output/" + filename + ".png").c_str());
+}
+
 int make_leaf(const string &name, int line, int token_type) {
     int ret = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
     return ret;
@@ -62,4 +102,8 @@ int make_ident_leaf(const string &name, int line, int token_type, const char *id
 
 void set_root(int root_id) {
     GLOBAL_PARSE_TREE.set_root(root_id);
+}
+
+void to_dot(const string &filename) {
+    GLOBAL_PARSE_TREE.to_dot(filename);
 }
