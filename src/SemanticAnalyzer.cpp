@@ -60,8 +60,10 @@ bool SemanticAnalyzer::declare_func(int return_type, const string &ident) {
 bool SemanticAnalyzer::SemanticAnalyze() {
     // 初始化全局变量与全局作用域。
     SOMETHING_WRONG = false;
-    IN_LOOP = false;
-    IN_FUNC_DEF = false;
+    IN_LOOP = 0;
+    IN_FUNC_DEF = 0;
+    IN_FUNC_IDENT_DEF = 0;
+    IN_FUNC_FPARAMS_DEF = 0;
     GLOBAL_VAR_TYPE = -1;
     scope_stack.clear();
     push_scope();
@@ -85,13 +87,25 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
 
     // 进入循环体
     if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
-        IN_LOOP = true;
+        ++IN_LOOP;
     }
 
     // 进入函数定义
+    if (node.name == "FuncDef") {
+        ++IN_FUNC_DEF;
+    }
+
+    // 进入函数标识符定义
     if (node.name == "FuncType") {
         GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
-        IN_FUNC_DEF = true;
+        ++IN_FUNC_IDENT_DEF;
+    }
+
+    // 进入函数形参定义
+    if (node.name == "FuncFParams") {
+        if (IN_FUNC_FPARAMS_DEF == 0) // 第一次使用确保清空，可能不必要
+            func_fparams_stack.clear();
+        ++IN_FUNC_FPARAMS_DEF;
     }
 
     /*-------------------语义提取-------------------*/
@@ -127,11 +141,31 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
         }
     }
 
-    // 处理函数声明
-    if (IN_FUNC_DEF && node.token_type == IDENT) {
+    // 处理函数声明时的标识符
+    if (IN_FUNC_IDENT_DEF && node.token_type == IDENT) {
         if (!declare_func(GLOBAL_VAR_TYPE, node.ident)) {
             SOMETHING_WRONG = true;
             Err('4', node.line, "Redefinition of function \"" + string(node.ident) + "\".");
+        }
+    }
+
+    // 处理函数声明时的形参类型
+    if (IN_FUNC_FPARAMS_DEF && node.name == "Btype") {
+        GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
+    }
+
+    // 处理函数声明时的形参标识符
+    if (IN_FUNC_FPARAMS_DEF && node.token_type == IDENT) {
+        func_fparams_stack.push_back({GLOBAL_VAR_TYPE, string(node.ident)});
+    }
+
+    // 处理函数定义时引入的形参
+    if (IN_FUNC_DEF && node.name == "Block") {
+        for (auto &param : func_fparams_stack) {
+            if (!declare_var(param.first, param.second)) {
+                SOMETHING_WRONG = true;
+                Err('2', node.line, "Redefinition of variable \"" + param.second + "\".");
+            }
         }
     }
 
@@ -175,11 +209,21 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
 
     // 离开循环体
     if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
-        IN_LOOP = false;
+        --IN_LOOP;
     }
 
-    // 离开函数定义
-    if (IN_FUNC_DEF && node.token_type == LPARENT) {
-        IN_FUNC_DEF = false;
+    // 离开函数定义 (函数定义后的第一个block即退出，仅用于引入形参)
+    if (IN_FUNC_DEF && node.name == "Block") {
+        --IN_FUNC_DEF;
+    }
+
+    // 离开函数标识符定义
+    if (IN_FUNC_IDENT_DEF && node.token_type == LPARENT) {
+        --IN_FUNC_IDENT_DEF;
+    }
+
+    // 离开函数形参定义
+    if (node.name == "FuncFParams") {
+        --IN_FUNC_FPARAMS_DEF;
     }
 }
