@@ -53,9 +53,9 @@
 %token <node_id> BAD_OCT BAD_HEX BAD_FLOAT BAD_IDENT UNKNOWN_CHAR
 
 /* 文法开始符号 */
-%start CompUnit
+%start CompUnits
 
-%type <node_id> CompUnit Decl ConstDecl ConstDefList ConstDef ConstInitVal  ConstInitValList
+%type <node_id> CompUnits CompUnit Decl ConstDecl ConstDefList ConstDef ConstInitVal  ConstInitValList
 %type <node_id> BType VarDecl VarDefList VarDef InitVal FuncDef FuncType InitValList
 %type <node_id> FuncFParams FuncFParam Block BlockItem BlockItemList Stmt FuncFParamDimsList
 %type <node_id> Exp Cond LVal PrimaryExp Number UnaryExp UnaryOp VarDimList ConstDimList
@@ -64,18 +64,22 @@
 
 %%  /* ================== 语法规则区 ================== */
 /* CompUnit → [CompUnit](Decl | FuncDef) */
-CompUnit
-    : CompUnit CompUnit { 
-        $$ = make_node("CompUnit", -1, -1, $1, $2);
+CompUnits
+    : CompUnit CompUnits { 
+        $$ = make_node("CompUnits", -1, -1, $1, $2);
         set_root($$);
     }
-    | FuncDef {
-        $$ = make_node("CompUnit", -1, -1, $1);
+    | CompUnit {
+        $$ = make_node("CompUnits", -1, -1, $1);
         set_root($$);
+    }
+
+CompUnit
+    : FuncDef {
+        $$ = make_node("CompUnit", -1, -1, $1);
     }
     | Decl {
         $$ = make_node("CompUnit", -1, -1, $1);
-        set_root($$);
     }
     ;
 
