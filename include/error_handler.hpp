@@ -24,7 +24,8 @@ string green(const T &input) {
 }
 
 // 输出红色错误信息。 A:词法错误 B:语法错误
-void Err(char type, int line, string desc = "");
+void Err(const string &type, int line, const string &desc = "");
+void Err(char type, int line, const string &desc = "");
 
 // 输出绿色正确提示信息
 void Ok(string desc);

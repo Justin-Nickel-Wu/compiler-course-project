@@ -6,13 +6,17 @@ using namespace std;
 bool WRONG_FOUND_IN_LEXER = false;
 bool WRONG_FOUND_IN_PARSER = false;
 
-void Err(char type, int line, string desc) {
-    cout << red("Error type " + string(1, type) + " at Line " + to_string(line));
+void Err(const string &type, int line, const string &desc) {
+    cout << red("Error type " + type + " at Line " + to_string(line));
     if (!desc.empty()) {
         cout << red(": " + desc) << endl;
     } else {
         cout << red(".") << endl;
     }
+}
+
+void Err(char type, int line, const string &desc) {
+    Err(string(1, type), line, desc);
 }
 
 void Ok(string desc) {
