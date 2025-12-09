@@ -1,5 +1,6 @@
 #include "SemanticAnalyzer.hpp"
 #include "parse_tree.hpp"
+#include "error_handler.hpp"
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -16,7 +17,7 @@ void SemanticAnalyzer::pop_scope() {
     scope_stack.pop_back();
 }
 
-bool SemanticAnalyzer::declare_symbol(const string &ident, int type) {
+bool SemanticAnalyzer::declare_symbol(int type, const string &ident) {
     if (scope_stack.empty()) {
         cerr << "Error: No scope available to declare symbol." << endl;
         exit(1);
@@ -34,18 +35,54 @@ bool SemanticAnalyzer::declare_symbol(const string &ident, int type) {
     return true;
 }
 
-bool SemanticAnalyzer::SemanticAnalyze(const ParseTree &parse_tree) {
-    // 语义分析的具体实现待补充
-    // 这里只是一个框架示例
-
-    // 初始化全局作用域
+bool SemanticAnalyzer::SemanticAnalyze() {
+    // 初始化全局变量与全局作用域。
+    SOMETHING_WRONG = false;
+    GLOBAL_VAR_TYPE = -1;
+    scope_stack.clear();
     push_scope();
 
-    // 遍历语法树节点进行语义检查
-    // 具体逻辑根据语法树结构和语义规则实现
+    SemanticAnalyzeDFS(AST.get_root());
 
     // 最后销毁全局作用域
     pop_scope();
 
-    return true; // 返回是否通过语义分析
+    return !SOMETHING_WRONG;
+}
+
+void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
+    ParseTreeNode &node = AST.nodes[p];
+
+    // 进入新作用域
+    if (node.name == "Block") {
+        push_scope();
+    }
+
+    // 处理声明变量时的类型
+    if (node.name == "BType") {
+        int q = node.son[0]; // 获取类型节点
+        AST.nodes[q].token_type = node.token_type;
+    }
+
+    // 处理变量声明时的标识符
+    if (node.name == "VarDef") {
+        int q = node.son[0]; // 获取标识符节点
+        string ident = AST.nodes[q].ident;
+        if (!declare_symbol(GLOBAL_VAR_TYPE, ident)) {
+            SOMETHING_WRONG = true;
+            Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
+        }
+    }
+
+    // TODO: 其他语义分析逻辑
+
+    // 递归处理子节点
+    for (int son_id : node.son) {
+        SemanticAnalyzeDFS(son_id);
+    }
+
+    // 离开作用域
+    if (node.name == "Block") {
+        pop_scope();
+    }
 }

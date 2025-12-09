@@ -2,6 +2,7 @@
 #include "flex_bison_config.hpp"
 #include "error_handler.hpp"
 #include "parse_tree.hpp"
+#include "SemanticAnalyzer.hpp"
 using namespace std;
 
 void set_input_file(string filename) {
@@ -10,7 +11,7 @@ void set_input_file(string filename) {
         cout << red("Failed to open " + filename + "\n") << endl;
         exit(1);
     }
-    cout << green("File opened successfully.\n") << endl;
+    Ok("File opened successfully.\n");
     yyin = file;
 }
 
@@ -57,14 +58,20 @@ void Process(const string &filename) {
     yydebug = 0;
     yyparse();
     if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER) {
-        cout << red("\nParsing failed due to earlier errors.") << endl;
+        cout << '\n';
+        cout << red("Parsing failed due to earlier errors.") << endl;
         return;
     } else {
-        Ok("Parsing completed successfully.");
-        cout << endl;
-        cout << green("Generating parse tree to output/parse_tree.png") << endl;
+        Ok("Parsing completed successfully.\n");
+        Ok("Generating parse tree to output/parse_tree.png\n");
     }
     to_dot("parse_tree");
+    SemanticAnalyzer analyzer(GLOBAL_PARSE_TREE);
+    if (analyzer.SemanticAnalyze()) {
+        Ok("Semantic analysis completed successfully.\n");
+    } else {
+        cout << red("\nSemantic analysis failed due to earlier errors.") << endl;
+    }
 }
 
 int main(int argc, char **argv) {
