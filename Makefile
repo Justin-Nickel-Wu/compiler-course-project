@@ -66,4 +66,8 @@ clean:
 
 
 run: all
-	$(TARGET)
+	@if [ -z "$(FILE)" ]; then \
+		echo "Usage: make run FILE=your_input_file"; \
+		exit 1; \
+	fi
+	@$(TARGET) $(FILE)

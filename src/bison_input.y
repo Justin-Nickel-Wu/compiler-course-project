@@ -29,7 +29,7 @@
 
 /* 关键字 */
 %token <node_id> CONST INT FLOAT VOID
-%token <node_id> IF WHILE BREAK CONTINUE RETURN
+%token <node_id> IF ELSE WHILE BREAK CONTINUE RETURN
 
 /* 比较、逻辑运算符 */
 %token <node_id> EQ NEQ LE GE AND OR

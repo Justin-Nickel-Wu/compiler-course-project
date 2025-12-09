@@ -52,12 +52,26 @@ void part2_test(string filename) {
     GLOBAL_PARSE_TREE.debug(GLOBAL_PARSE_TREE.get_root());
 }
 
-int main() {
-    // part1_test("input.txt");
-    cout << endl
-         << endl;
-    // yydebug = 1;
-    part2_test("input.txt");
+void Process(const string &filename) {
+    set_input_file(filename);
+    yydebug = 0;
+    yyparse();
+    if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER) {
+        cout << red("\nParsing failed due to earlier errors.") << endl;
+        return;
+    } else {
+        Ok("Parsing completed successfully.");
+        cout << endl;
+        cout << green("Generating parse tree to output/parse_tree.png") << endl;
+    }
     to_dot("parse_tree");
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        cout << "Usage: make run FILE=your_input_file" << endl;
+        return 1;
+    }
+    Process(argv[1]);
     return 0;
 }
