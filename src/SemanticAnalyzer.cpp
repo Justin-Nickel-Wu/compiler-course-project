@@ -1,6 +1,7 @@
 #include "SemanticAnalyzer.hpp"
 #include "parse_tree.hpp"
 #include "error_handler.hpp"
+#include "bison.hpp"
 
 #include <bits/stdc++.h>
 using namespace std;
@@ -38,6 +39,7 @@ bool SemanticAnalyzer::declare_symbol(int type, const string &ident) {
 bool SemanticAnalyzer::SemanticAnalyze() {
     // 初始化全局变量与全局作用域。
     SOMETHING_WRONG = false;
+    IN_LOOP = false;
     GLOBAL_VAR_TYPE = -1;
     scope_stack.clear();
     push_scope();
@@ -53,15 +55,22 @@ bool SemanticAnalyzer::SemanticAnalyze() {
 void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     ParseTreeNode &node = AST.nodes[p];
 
+    /*-------------------状态处理-------------------*/
     // 进入新作用域
     if (node.name == "Block") {
         push_scope();
     }
 
+    // 进入循环体
+    if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
+        IN_LOOP = true;
+    }
+
+    /*-------------------语义提取-------------------*/
     // 处理声明变量时的类型
     if (node.name == "BType") {
         int q = node.son[0]; // 获取类型节点
-        AST.nodes[q].token_type = node.token_type;
+        GLOBAL_VAR_TYPE = AST.nodes[q].token_type;
     }
 
     // 处理变量声明时的标识符
@@ -74,15 +83,28 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
         }
     }
 
+    // 处理break和continue语句
+    if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
+        SOMETHING_WRONG = true;
+        Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+    }
+
     // TODO: 其他语义分析逻辑
 
+    /*-------------------递归遍历-------------------*/
     // 递归处理子节点
     for (int son_id : node.son) {
         SemanticAnalyzeDFS(son_id);
     }
 
+    /*-------------------状态回收-------------------*/
     // 离开作用域
     if (node.name == "Block") {
         pop_scope();
+    }
+
+    // 离开循环体
+    if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
+        IN_LOOP = false;
     }
 }

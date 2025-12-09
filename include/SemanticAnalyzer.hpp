@@ -21,6 +21,8 @@ private:
     ParseTree &AST;
     // 语义分析过程中是否出错
     bool SOMETHING_WRONG;
+    // 是否处于循环体内
+    bool IN_LOOP;
     // 当前处理的变量类型
     int GLOBAL_VAR_TYPE;
     // 符号表栈
