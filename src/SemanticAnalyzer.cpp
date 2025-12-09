@@ -120,8 +120,8 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
             SOMETHING_WRONG = true;
             Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
         }
-        // 混淆函数与变量
-        if (info.symbol_type == FUNC_SYMBOL) {
+        // 将函数当作变量使用
+        else if (info.symbol_type == FUNC_SYMBOL) {
             SOMETHING_WRONG = true;
             Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
         }
@@ -132,6 +132,24 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
         if (!declare_func(GLOBAL_VAR_TYPE, node.ident)) {
             SOMETHING_WRONG = true;
             Err('4', node.line, "Redefinition of function \"" + string(node.ident) + "\".");
+        }
+    }
+
+    // 处理函数调用
+    if (node.name == "UnaryExp") {
+        ParseTreeNode son_node = AST.nodes[node.son[0]];
+        if (son_node.token_type == IDENT) {
+            SymbolInfo info = find(son_node.ident);
+            // 调用未声明的函数
+            if (info.type == -1) {
+                SOMETHING_WRONG = true;
+                Err('3', node.line, "Call to undeclared function \"" + string(son_node.ident) + "\".");
+            }
+            // 将变量当作函数使用
+            else if (info.symbol_type != FUNC_SYMBOL) {
+                SOMETHING_WRONG = true;
+                Err('5', node.line, "\"" + string(son_node.ident) + "\" is a variable, not a function.");
+            }
         }
     }
 
