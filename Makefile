@@ -7,6 +7,7 @@ SRC_DIR = src
 GEN_DIR = generated
 OBJ_DIR = obj
 BIN_DIR = bin
+OUTPUT_DIR = output
 
 # 输入文件
 BISON_SRC = $(SRC_DIR)/bison_input.y
@@ -62,7 +63,7 @@ $(TARGET): $(OBJS)
 
 # ======== 清理 ========
 clean:
-	rm -rf $(OBJ_DIR) $(GEN_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(GEN_DIR) $(BIN_DIR) $(OUTPUT_DIR)
 
 
 run: all
@@ -70,4 +71,5 @@ run: all
 		echo "Usage: make run FILE=your_input_file"; \
 		exit 1; \
 	fi
+	@mkdir -p $(OUTPUT_DIR)
 	@$(TARGET) $(FILE)

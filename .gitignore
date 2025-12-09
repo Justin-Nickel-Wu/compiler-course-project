@@ -1,7 +1,7 @@
 /bin
 /obj
 /output
-/.vscode/*
+/.vscode
 /generated
 
 in.txt
