@@ -32,8 +32,10 @@ private:
     void push_scope();
     // 销毁作用域
     void pop_scope();
-    // 声明符号，如果成功返回true，失败返回false（重复定义）
+    // 声明变量，如果成功返回true，失败返回false（重复定义）
     bool declare_symbol(int type, const string &ident);
+    // 查找变量是否已定义
+    bool find_symbol(const string &ident);
     // 语义分析递归函数
     void SemanticAnalyzeDFS(int p);
 

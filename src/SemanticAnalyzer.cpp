@@ -36,6 +36,15 @@ bool SemanticAnalyzer::declare_symbol(int type, const string &ident) {
     return true;
 }
 
+bool SemanticAnalyzer::find_symbol(const string &ident) {
+    for (auto it : scope_stack) {
+        if (it.find(ident) != it.end()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool SemanticAnalyzer::SemanticAnalyze() {
     // 初始化全局变量与全局作用域。
     SOMETHING_WRONG = false;
@@ -87,6 +96,15 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
         SOMETHING_WRONG = true;
         Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+    }
+
+    // 处理变量使用
+    if (node.name == "LVal") {
+        string ident = AST.nodes[node.son[0]].ident;
+        if (!find_symbol(ident)) {
+            SOMETHING_WRONG = true;
+            Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
+        }
     }
 
     // TODO: 其他语义分析逻辑
