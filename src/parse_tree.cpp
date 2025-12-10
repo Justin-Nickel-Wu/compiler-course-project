@@ -5,6 +5,7 @@ using namespace std;
 #include "bison.hpp"
 
 ParseTree GLOBAL_PARSE_TREE;
+bool      debug_output_id = false;
 
 int ParseTree::make_node(const string &name, int line, int token_type, initializer_list<int> _son) {
     int ret = nodes.size();
@@ -91,6 +92,11 @@ void ParseTree::to_dot(const string &filename) {
                 info.shape = "box", info.style = "filled", info.fillcolor = "#eeeeee";
             }
         }
+
+        // 是否需要在标签前加上节点编号
+        if (debug_output_id)
+            info.label = to_string(i) + ": " + info.label;
+
         info.output(out, i);
     }
 
@@ -123,19 +129,19 @@ int make_leaf(const string &name, int line, int token_type) {
 }
 
 int make_int_leaf(const string &name, int line, int token_type, int ival) {
-    int ret = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
+    int ret                           = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
     GLOBAL_PARSE_TREE.nodes[ret].ival = ival;
     return ret;
 }
 
 int make_float_leaf(const string &name, int line, int token_type, double fval) {
-    int ret = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
+    int ret                           = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
     GLOBAL_PARSE_TREE.nodes[ret].fval = fval;
     return ret;
 }
 
 int make_ident_leaf(const string &name, int line, int token_type, const char *ident) {
-    int ret = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
+    int ret                            = GLOBAL_PARSE_TREE.make_node(name, line, token_type, {});
     GLOBAL_PARSE_TREE.nodes[ret].ident = strdup(ident);
     return ret;
 }

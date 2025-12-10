@@ -14,8 +14,7 @@ enum SymbolType {
 };
 
 struct SymbolInfo {
-    // 类型，使用词法token
-    int type;
+    int type; // 数值类型，使用词法token，-1表示不存在
 
     SymbolType symbol_type;
 
@@ -57,7 +56,7 @@ private:
 
     bool checkLVal(int node_id);          // 处理LVal节点（变量使用）
     bool checkBreakContinue(int node_id); // 处理break和continue语句
-    int  checkFuncCall(int node_id);      // 处理函数调用，若有效则返回函数返回值类型的token，否则返回-1
+    int  checkFuncCall(int node_id);      // 处理函数调用，若有效则返回函数返回值类型的token，否则返回0
     bool checkEXP(int node_id);           // 处理表达式节点
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明

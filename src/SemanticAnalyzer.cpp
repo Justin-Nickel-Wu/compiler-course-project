@@ -201,25 +201,23 @@ int SemanticAnalyzer::checkFuncCall(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理函数调用
-    if (node.name == "UnaryExp") {
-        ParseTreeNode son_node = AST.nodes[node.son[0]];
-        if (son_node.token_type == IDENT) {
-            SymbolInfo info = find(son_node.ident);
-            // 调用未声明的函数
-            if (info.type == -1) {
-                SOMETHING_WRONG = true;
-                Err('3', node.line, "Call to undeclared function \"" + string(son_node.ident) + "\".");
-                return 0;
-            }
-            // 将变量当作函数使用
-            else if (info.symbol_type != FUNC_SYMBOL) {
-                SOMETHING_WRONG = true;
-                Err('5', node.line, "\"" + string(son_node.ident) + "\" is a variable, not a function.");
-                return 0;
-            }
-        }
+    ParseTreeNode son_node = AST.nodes[node.son[0]];
+    SymbolInfo    info     = find(son_node.ident);
+
+    // 调用未声明的函数
+    if (info.type == -1) {
+        SOMETHING_WRONG = true;
+        Err('3', node.line, "Call to undeclared function \"" + string(son_node.ident) + "\".");
+        return 0;
     }
-    return 1;
+
+    // 将变量当作函数使用
+    if (info.symbol_type != FUNC_SYMBOL) {
+        SOMETHING_WRONG = true;
+        Err('5', node.line, "\"" + string(son_node.ident) + "\" is a variable, not a function.");
+        return 0;
+    }
+    return info.type;
 }
 
 bool SemanticAnalyzer::checkEXP(int node_id) {
@@ -230,11 +228,22 @@ bool SemanticAnalyzer::checkEXP(int node_id) {
     // 特殊处理：如果是函数调用
     if (node.name == "UnaryExp" && AST.nodes[node.son[0]].token_type == IDENT) {
         int ret_type = checkFuncCall(node_id);
-        if (ret_type != -1) {
+        // 有效结果
+        if (ret_type == INT || ret_type == FLOAT) {
             ASTInfo[node_id].type        = ret_type;
             ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
             return 1;
-        } else {
+        }
+        // void
+        else if (ret_type == VOID) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Function \"" + string(AST.nodes[node.son[0]].ident) + "()\" does not return a value.");
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
+            return 0;
+        }
+        // 无结果
+        else {
             ASTInfo[node_id].type        = -2;
             ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
             return 0;
@@ -285,6 +294,8 @@ bool SemanticAnalyzer::checkEXP(int node_id) {
         for (int son_id : node.son)
             // 如果子节点已经发生了类型错误，直接返回，避免重复报错
             if (ASTInfo[son_id].type == -2) {
+                ASTInfo[node_id].type        = -2;
+                ASTInfo[node_id].symbol_type = VAR_SYMBOL;
                 return 0;
             } else if (ASTInfo[son_id].type == FLOAT)
                 has_float = true;

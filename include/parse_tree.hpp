@@ -7,18 +7,18 @@ using namespace std;
 #include "bison.hpp"
 
 struct ParseTreeNode {
-    string name;
+    string      name;
     vector<int> son;
-    int line;       // 所在行号
-    int token_type; // 词法单元类型，非终结符为-1
-    int ival;
-    double fval;
-    char *ident;
+    int         line;       // 所在行号
+    int         token_type; // 词法单元类型，非终结符为-1
+    int         ival;
+    double      fval;
+    char       *ident;
     ParseTreeNode(const string &n, int line, int token_type) : name(n), line(line), token_type(token_type) {}
 };
 
 struct ParseTree {
-    int root;
+    int                   root;
     vector<ParseTreeNode> nodes;
 
     // 初始化，从1开始标号，0号节点为null节点
@@ -37,6 +37,9 @@ struct ParseTree {
 
 // 全局唯一的语法树对象
 extern ParseTree GLOBAL_PARSE_TREE;
+
+// 输出语法树时是否包含节点编号的调试开关
+extern bool debug_output_id;
 
 // 为全局语法树创建新节点。line若为-1则会自动填充。token_type若为-1则表示非终结符
 template <typename... Args>

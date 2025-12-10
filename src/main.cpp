@@ -19,13 +19,13 @@ void part1_test(string filename) {
     set_input_file(filename);
 
     struct info {
-        int token, line;
-        string text;
+        int     token, line;
+        string  text;
         YYSTYPE val;
         info(int t, int l, string txt, YYSTYPE v) : token(t), line(l), text(txt), val(v) {}
     };
     vector<info> tokens;
-    int token;
+    int          token;
 
     // ONLY_CHECK_LEXER = true;
     while ((token = yylex()) != 0)
@@ -55,7 +55,8 @@ void part2_test(string filename) {
 
 void Process(const string &filename) {
     set_input_file(filename);
-    yydebug = 0;
+    yydebug         = 0; // 控制bison自带debug输出
+    debug_output_id = 1; // 控制是否输出语法树时包含节点编号
     yyparse();
     if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER) {
         cout << '\n';
