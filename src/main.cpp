@@ -73,6 +73,8 @@ void Process(const string &filename) {
     } else {
         cout << red("\nSemantic analysis failed due to earlier errors.") << endl;
     }
+
+    analyzer.printASTInfo(); // DEBUG输出AST辅助信息
 }
 
 int main(int argc, char **argv) {

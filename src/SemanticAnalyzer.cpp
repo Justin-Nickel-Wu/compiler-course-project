@@ -100,8 +100,10 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     /*==维护类型==*/
     checkBreakContinue(p); // 处理break和continue语句
     checkLVal(p);          // 处理变量使用 (Val)
-    checkEXP(p);           // 处理表达式节点
+    checkExp(p);           // 处理表达式节点
     checkReturn(p);        // 处理return语句节点
+    checkAssign(p);        // 处理赋值
+    checkInitVal(p);       // 处理初始化值
 
     /*==状态回收==*/
     leaveNode(p);
@@ -221,7 +223,7 @@ int SemanticAnalyzer::checkFuncCall(int node_id) {
     return info.type;
 }
 
-bool SemanticAnalyzer::checkEXP(int node_id) {
+bool SemanticAnalyzer::checkExp(int node_id) {
     // 把所有有类型的儿子节点取出，有float则当前节点就是float，否则是int。
     // 某些节点需要特殊处理
     const ParseTreeNode &node = AST.nodes[node_id];
@@ -343,6 +345,55 @@ bool SemanticAnalyzer::checkReturn(int node_id) {
     return 1;
 }
 
+bool SemanticAnalyzer::checkAssign(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 判断赋值语句两侧类型是否匹配
+    if (node.name == "Stmt" && node.son.size() == 4 && AST.nodes[node.son[1]].token_type == ASSIGN) {
+        int left_type  = ASTInfo[node.son[0]].type;
+        int right_type = ASTInfo[node.son[2]].type;
+
+        if (left_type == -2 || right_type == -2) return 0; // 避免重复报错
+
+        if (left_type == INT && right_type == FLOAT) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Cannot assign float value to int variable.");
+            return 0;
+        }
+    }
+
+    // 判断变量初始化时的两侧类型是否匹配
+    if (node.name == "VarDef" && (node.son.size() == 3 || node.son.size() == 4)) {
+        int left_type  = GLOBAL_VAR_TYPE; // 此时GLOBAL_VAR_TYPE变量一定还是有效的
+        int right_type = ASTInfo[node.son[node.son.size() - 1]].type;
+
+        if (right_type == -2) return 0; // 避免重复报错
+
+        if (left_type == INT && right_type == FLOAT) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Cannot assign float value to int variable.");
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+bool SemanticAnalyzer::checkInitVal(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 处理初始化值
+    // TODO: 识别是不是数组
+    if (node.name == "InitVal") {
+        if (node.son.size() == 1 && AST.nodes[node.son[0]].name == "Exp") {
+            ASTInfo[node_id].type        = ASTInfo[node.son[0]].type;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+        }
+    }
+
+    return 1;
+}
+
 void SemanticAnalyzer::enterNode(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
@@ -402,5 +453,15 @@ void SemanticAnalyzer::leaveNode(int node_id) {
     // 离开函数形参定义
     if (node.name == "FuncFParams") {
         --IN_FUNC_FPARAMS_DEF;
+    }
+}
+
+void SemanticAnalyzer::printASTInfo() {
+    ofstream out("./output/ast_info_debug.txt");
+    for (int i = 0; i < AST.nodes.size(); ++i) {
+        const ParseTreeNode &node = AST.nodes[i];
+        const ASTInfoNode   &info = ASTInfo[i];
+        out << "Node ID: " << i << ", Name: " << node.name << ", Type: " << info.type
+            << ", Symbol Type: " << info.symbol_type << ", Dims: " << info.dims << endl;
     }
 }

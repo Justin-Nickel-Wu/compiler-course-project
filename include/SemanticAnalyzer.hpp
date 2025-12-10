@@ -38,9 +38,9 @@ private:
     vector<unordered_map<string, SymbolInfo>> scope_stack;        // 符号表栈
 
     struct ASTInfoNode {
-        int         type;        // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
-        SymbolType  symbol_type; // 标识符的类型，使用enum SymbolType
-        vector<int> dims;        // 数组维度
+        int        type;        // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
+        SymbolType symbol_type; // 标识符的类型，使用enum SymbolType
+        int        dims;        // 数组维度
 
         ASTInfoNode() : type(-1) {}
     };
@@ -58,8 +58,10 @@ private:
     bool checkLVal(int node_id);          // 处理LVal节点（变量使用）
     bool checkBreakContinue(int node_id); // 处理break和continue语句
     int  checkFuncCall(int node_id);      // 处理函数调用，若有效则返回函数返回值类型的token，否则返回0
-    bool checkEXP(int node_id);           // 处理表达式节点
+    bool checkExp(int node_id);           // 处理表达式节点
     bool checkReturn(int node_id);        // 处理return语句节点
+    bool checkAssign(int node_id);        // 处理赋值
+    bool checkInitVal(int node_id);       // 处理初始化值
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明
     void enterNode(int node_id);          // 进入节点时的处理
@@ -71,6 +73,7 @@ private:
 public:
     SemanticAnalyzer(ParseTree &ast) : AST(ast) {}
     bool SemanticAnalyze(); // 进行语义分析
+    void printASTInfo();    // DEBUG输出AST辅助信息
 };
 
 // 判断value是否在list中
