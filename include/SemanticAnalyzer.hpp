@@ -14,9 +14,10 @@ enum SymbolType {
 };
 
 struct SymbolInfo {
-    int        type; // 数值类型，使用词法token，-1表示不存在
-    SymbolType symbol_type;
-    int        dims; // 数组维度，0表示非数组，>0表示数组维度
+    int                    type; // 数值类型，使用词法token，-1表示不存在
+    SymbolType             symbol_type;
+    int                    dims;        // 数组维度，0表示非数组，>0表示数组维度
+    vector<pair<int, int>> func_params; // 函数参数列表，存储每个参数的类型和维度
 
     SymbolInfo() : type(-1), symbol_type(VAR_SYMBOL) {}
     SymbolInfo(int type, SymbolType symbol_type, int dims) : type(type), symbol_type(symbol_type), dims(dims) {}
@@ -32,10 +33,10 @@ private:
     // 为了处理嵌套逻辑，使用类似mut方法
     int IN_LOOP, IN_FUNC_DEF, IN_FUNC_IDENT_DEF, IN_FUNC_FPARAMS_DEF;
 
-    bool SOMETHING_WRONG;         // 语义分析过程中是否出错
-    int  GLOBAL_VAR_TYPE;         // 用于缓存当前声明的函数或是变量的类型。有很多情况会使用到该变量，即用即弃，正确性由使用者自身保证
-    int  GLOBAL_FUNC_RETURN_TYPE; // 用于缓存当前函数的返回值类型
-
+    bool   SOMETHING_WRONG;         // 语义分析过程中是否出错
+    int    GLOBAL_VAR_TYPE;         // 用于缓存当前声明的函数或是变量的类型。有很多情况会使用到该变量，即用即弃，正确性由使用者自身保证
+    int    GLOBAL_FUNC_RETURN_TYPE; // 用于缓存当前函数的返回值类型
+    string GLOBAL_FUNC_IDENT;       // 用于缓存当前函数的标识符
     struct fparamsInfo {
         int    type, dims;
         string ident;

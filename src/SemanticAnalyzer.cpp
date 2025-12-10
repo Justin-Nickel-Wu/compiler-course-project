@@ -120,6 +120,7 @@ void SemanticAnalyzer::declareFunction(int node_id) {
 
     // 处理函数声明时的标识符
     if (IN_FUNC_IDENT_DEF && node.token_type == IDENT) {
+        GLOBAL_FUNC_IDENT = string(node.ident);
         if (!declare_func(GLOBAL_VAR_TYPE, node.ident)) {
             SOMETHING_WRONG = true;
             Err('4', node.line, "Redefinition of function \"" + string(node.ident) + "\".");
@@ -133,12 +134,21 @@ void SemanticAnalyzer::declareFunction(int node_id) {
 
     // 处理函数定义时引入的形参
     if (IN_FUNC_DEF && node.name == "Block") {
+        SymbolInfo func_info = find(GLOBAL_FUNC_IDENT);
+        if (func_info.symbol_type != FUNC_SYMBOL) return; // 说明之前已经报错了，直接返回
+
+        func_info.func_params.clear();
         for (auto &param : func_fparams_stack) {
+            func_info.func_params.push_back({param.type, param.dims});
             if (!declare_var(param.type, param.ident, param.dims)) {
                 SOMETHING_WRONG = true;
                 Err('2', node.line, "Redefinition of variable \"" + param.ident + "\".");
             }
         }
+
+        // 更新这个函数定义
+        auto &current              = scope_stack.front();
+        current[GLOBAL_FUNC_IDENT] = func_info;
     }
 }
 
@@ -248,18 +258,11 @@ bool SemanticAnalyzer::checkExp(int node_id) {
     if (node.name == "UnaryExp" && AST.nodes[node.son[0]].token_type == IDENT) {
         int ret_type = checkFuncCall(node_id);
         // 有效结果
-        if (ret_type == INT || ret_type == FLOAT) {
+        if (ret_type == INT || ret_type == FLOAT || ret_type == VOID) {
             ASTInfo[node_id].type        = ret_type;
             ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
+            ASTInfo[node_id].dims        = 0;
             return 1;
-        }
-        // void
-        else if (ret_type == VOID) {
-            SOMETHING_WRONG = true;
-            Err("11", node.line, "Function \"" + string(AST.nodes[node.son[0]].ident) + "()\" does not return a value.");
-            ASTInfo[node_id].type        = -2;
-            ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
-            return 0;
         }
         // 无结果
         else {
@@ -311,7 +314,7 @@ bool SemanticAnalyzer::checkExp(int node_id) {
 
     // 一般情况：表达式节点
     if (in(node.name, {"Exp", "ConstExp", "AddExp", "MulExp", "UnaryExp", "PrimaryExp"})) {
-        bool has_float = false, has_array = false;
+        bool has_float = false, has_array = false, has_void = false;
         int  dims;
         for (int son_id : node.son)
             // 如果子节点已经发生了类型错误，直接返回，避免重复报错
@@ -322,6 +325,9 @@ bool SemanticAnalyzer::checkExp(int node_id) {
             } else {
                 if (ASTInfo[son_id].type == FLOAT)
                     has_float = true;
+                if (ASTInfo[son_id].type == VOID)
+                    has_void = true;
+
                 if (ASTInfo[son_id].type == INT || ASTInfo[son_id].type == FLOAT) {
                     dims = ASTInfo[son_id].dims;
                     if (ASTInfo[son_id].dims > 0)
@@ -329,12 +335,19 @@ bool SemanticAnalyzer::checkExp(int node_id) {
                 }
             }
 
-        // 只有直接继承数组的节点才是数组类型，其他情况一定引入了运算，报错
+        // 只有直接继承数组、void的节点是可行的，其他情况一定引入了运算，报错
         if (has_array && node.son.size() > 1) {
             SOMETHING_WRONG = true;
             Err("11", node.line, "Array type cannot participate in arithmetic operations.");
             ASTInfo[node_id].type        = -2;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            return 0;
+        }
+        if (has_void && node.son.size() > 1) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Use void function as a value.");
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
             return 0;
         }
 
