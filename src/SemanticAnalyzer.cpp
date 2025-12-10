@@ -48,7 +48,7 @@ SymbolInfo SemanticAnalyzer::find(const string &ident) {
 
 bool SemanticAnalyzer::declare_func(int return_type, const string &ident) {
     // 函数声明时一定处于全局作用域中
-    auto &current = scope_stack.front();
+    auto      &current = scope_stack.front();
     SymbolInfo info(return_type, FUNC_SYMBOL);
     if (current.find(ident) != current.end()) {
         return false;
@@ -58,12 +58,12 @@ bool SemanticAnalyzer::declare_func(int return_type, const string &ident) {
 }
 
 void SemanticAnalyzer::init() {
-    SOMETHING_WRONG = false;
-    IN_LOOP = 0;
-    IN_FUNC_DEF = 0;
-    IN_FUNC_IDENT_DEF = 0;
+    SOMETHING_WRONG     = false;
+    IN_LOOP             = 0;
+    IN_FUNC_DEF         = 0;
+    IN_FUNC_IDENT_DEF   = 0;
     IN_FUNC_FPARAMS_DEF = 0;
-    GLOBAL_VAR_TYPE = -1;
+    GLOBAL_VAR_TYPE     = -1;
     scope_stack.clear();
 
     ASTInfo.clear();
@@ -91,7 +91,6 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     /*==语义提取==*/
     declareVariable(p);    // 处理变量声明
     declareFunction(p);    // 处理函数声明
-    checkFuncCall(p);      // 处理函数调用
     checkBreakContinue(p); // 处理break和continue语句
 
     /*==递归遍历==*/
@@ -101,6 +100,7 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
 
     /*==维护类型==*/
     checkLVal(p); // 处理变量使用 (Val)
+    checkEXP(p);  // 处理表达式节点
 
     /*==状态回收==*/
     leaveNode(p);
@@ -143,13 +143,13 @@ void SemanticAnalyzer::declareVariable(int node_id) {
 
     // 处理声明变量时的类型
     if (node.name == "BType") {
-        int q = node.son[0]; // 获取类型节点
+        int q           = node.son[0]; // 获取类型节点
         GLOBAL_VAR_TYPE = AST.nodes[q].token_type;
     }
 
     // 处理变量声明时的标识符
     if (node.name == "VarDef") {
-        int q = node.son[0]; // 获取标识符节点
+        int    q     = node.son[0]; // 获取标识符节点
         string ident = AST.nodes[q].ident;
         if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
             SOMETHING_WRONG = true;
@@ -158,41 +158,46 @@ void SemanticAnalyzer::declareVariable(int node_id) {
     }
 }
 
-void SemanticAnalyzer::checkLVal(int node_id) {
+bool SemanticAnalyzer::checkLVal(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
     if (node.name == "LVal") {
-        string ident = AST.nodes[node.son[0]].ident;
-        SymbolInfo info = find(ident);
+        string     ident = AST.nodes[node.son[0]].ident;
+        SymbolInfo info  = find(ident);
         // 使用未声明的变量
         if (info.type == -1) {
             SOMETHING_WRONG = true;
             Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
+            return 0;
         }
         // 将函数当作变量使用
         else if (info.symbol_type == FUNC_SYMBOL) {
             SOMETHING_WRONG = true;
             Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
+            return 0;
         }
         // 正常
         else {
-            ASTInfo[node_id].type = info.type;
+            ASTInfo[node_id].type        = info.type;
             ASTInfo[node_id].symbol_type = info.symbol_type;
         }
     }
+    return 1;
 }
 
-void SemanticAnalyzer::checkBreakContinue(int node_id) {
+bool SemanticAnalyzer::checkBreakContinue(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理break和continue语句
     if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
         SOMETHING_WRONG = true;
         Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+        return 0;
     }
+    return 1;
 }
 
-void SemanticAnalyzer::checkFuncCall(int node_id) {
+int SemanticAnalyzer::checkFuncCall(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理函数调用
@@ -204,14 +209,95 @@ void SemanticAnalyzer::checkFuncCall(int node_id) {
             if (info.type == -1) {
                 SOMETHING_WRONG = true;
                 Err('3', node.line, "Call to undeclared function \"" + string(son_node.ident) + "\".");
+                return 0;
             }
             // 将变量当作函数使用
             else if (info.symbol_type != FUNC_SYMBOL) {
                 SOMETHING_WRONG = true;
                 Err('5', node.line, "\"" + string(son_node.ident) + "\" is a variable, not a function.");
+                return 0;
             }
         }
     }
+    return 1;
+}
+
+bool SemanticAnalyzer::checkEXP(int node_id) {
+    // 把所有有类型的儿子节点取出，有float则当前节点就是float，否则是int。
+    // 某些节点需要特殊处理
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 特殊处理：如果是函数调用
+    if (node.name == "UnaryExp" && AST.nodes[node.son[0]].token_type == IDENT) {
+        int ret_type = checkFuncCall(node_id);
+        if (ret_type != -1) {
+            ASTInfo[node_id].type        = ret_type;
+            ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
+            return 1;
+        } else {
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = FUNC_SYMBOL;
+            return 0;
+        }
+    }
+
+    // 特殊情况： 常量
+    if (node.name == "Number") {
+        ParseTreeNode son_node = AST.nodes[node.son[0]];
+        if (son_node.token_type == INT_CONST) {
+            ASTInfo[node_id].type        = INT;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+        } else if (son_node.token_type == FLOAT_CONST) {
+            ASTInfo[node_id].type        = FLOAT;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+        }
+        return 1;
+    }
+
+    // 特殊情况： MulExp涉及取模时需要均是int
+    if (node.name == "MulExp" && node.son.size() == 3 && AST.nodes[node.son[1]].token_type == MOD) {
+        int left_type  = ASTInfo[node.son[0]].type;
+        int right_type = ASTInfo[node.son[2]].type;
+
+        // 避免重复报错
+        if (left_type == -2 || right_type == -2) {
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            return 0;
+        }
+
+        if (left_type != INT || right_type != INT) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Modulus operator \"%\" requires integer operands.");
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            return 0;
+        } else {
+            ASTInfo[node_id].type        = INT;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            return 1;
+        }
+    }
+
+    // 一般情况：表达式节点
+    if (in(node.name, {"Exp", "AddExp", "MulExp", "UnaryExp", "PrimaryExp"})) {
+        bool has_float = false;
+        for (int son_id : node.son)
+            // 如果子节点已经发生了类型错误，直接返回，避免重复报错
+            if (ASTInfo[son_id].type == -2) {
+                return 0;
+            } else if (ASTInfo[son_id].type == FLOAT)
+                has_float = true;
+
+        if (has_float) {
+            ASTInfo[node_id].type        = FLOAT;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+        } else {
+            ASTInfo[node_id].type        = INT;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+        }
+    }
+    return 1;
 }
 
 void SemanticAnalyzer::enterNode(int node_id) {

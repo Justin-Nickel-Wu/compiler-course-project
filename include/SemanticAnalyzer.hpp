@@ -32,15 +32,17 @@ private:
     int IN_LOOP, IN_FUNC_DEF, IN_FUNC_IDENT_DEF, IN_FUNC_FPARAMS_DEF;
 
     bool SOMETHING_WRONG; // 语义分析过程中是否出错
-    int GLOBAL_VAR_TYPE;  // 当前处理的变量类型，有很多情况会使用到该变量，正确性由使用者自身保证
+    int  GLOBAL_VAR_TYPE; // 当前处理的变量类型，有很多情况会使用到该变量，正确性由使用者自身保证
 
-    vector<pair<int, string>> func_fparams_stack;          // 函数形参栈
-    vector<unordered_map<string, SymbolInfo>> scope_stack; // 符号表栈
+    vector<pair<int, string>>                 func_fparams_stack; // 函数形参栈
+    vector<unordered_map<string, SymbolInfo>> scope_stack;        // 符号表栈
 
     struct ASTInfoNode {
-        int type;               // 数值的类型，使用词法token
-        SymbolType symbol_type; // 标识符的类型，使用enum SymbolType
-        vector<int> dims;       // 数组维度
+        int         type;        // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
+        SymbolType  symbol_type; // 标识符的类型，使用enum SymbolType
+        vector<int> dims;        // 数组维度
+
+        ASTInfoNode() : type(-1) {}
     };
 
     vector<ASTInfoNode> ASTInfo; // AST辅助信息
@@ -50,11 +52,13 @@ private:
 
     bool declare_var(int type, const string &ident);         // 声明变量，失败返回false（重复定义）
     bool declare_func(int return_type, const string &ident); // 声明函数，失败返回false（重复定义）
-    SymbolInfo find(const string &ident);                    // 根据标识符查找信息
 
-    void checkLVal(int node_id);          // 处理LVal节点（变量使用）
-    void checkBreakContinue(int node_id); // 处理break和continue语句
-    void checkFuncCall(int node_id);      // 处理函数调用
+    SymbolInfo find(const string &ident); // 根据标识符查找信息
+
+    bool checkLVal(int node_id);          // 处理LVal节点（变量使用）
+    bool checkBreakContinue(int node_id); // 处理break和continue语句
+    int  checkFuncCall(int node_id);      // 处理函数调用，若有效则返回函数返回值类型的token，否则返回-1
+    bool checkEXP(int node_id);           // 处理表达式节点
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明
     void enterNode(int node_id);          // 进入节点时的处理
@@ -67,5 +71,11 @@ public:
     SemanticAnalyzer(ParseTree &ast) : AST(ast) {}
     bool SemanticAnalyze(); // 进行语义分析
 };
+
+// 判断value是否在list中
+template <typename T, typename U>
+bool in(const T &value, std::initializer_list<U> list) {
+    return std::find(list.begin(), list.end(), value) != list.end();
+}
 
 #endif
