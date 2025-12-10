@@ -5,23 +5,10 @@
 ---
 #### 功能说明
 本项目实现了一个基于Flex，Bison实现的SysY源代码的词法、语法、语义检查（部分）编译器。
+
 SysY详细语法见docs目录下相关手册。
 
----
-#### 文件结构
-
-Project/
-├── include/        - Header files
-├── src/            - Source code (.cpp, .l, .y)
-├── generated/      - Flex/Bison generated code
-├── obj/            - Compiled object files
-├── output/         - AST dumps and debug logs
-├── docs/           - Documents
-├── sysy            - Compilation results
-├── Makefile
-└── README.md
-
-注：部分目录由Makefile自动生成。由于源代码中引用了Flex/Bison自动生成的代码，若未执行make部分文件会出现找不到头文件的情况。
+部分目录由Makefile自动生成。由于源代码中引用了Flex/Bison自动生成的代码，若未执行make部分文件会出现找不到头文件的情况。
 
 ---
 #### 使用方法
@@ -30,7 +17,6 @@ Project/
 - make run FILE=input 对input文件执行文法检查
 - make clean 清除所有编译产物
 - ./sysy input 对input文件执行文法检查（编译后）
-- 
 ---
 #### 错误类型表
 
