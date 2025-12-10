@@ -2,7 +2,8 @@
 /output
 /.vscode
 /generated
-/docs
+/docs/*
+!/docs/SysY2022语言定义-V1.pdf
 
 
 sysy
