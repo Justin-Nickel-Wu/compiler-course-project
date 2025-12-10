@@ -57,6 +57,7 @@ void Process(const string &filename) {
     set_input_file(filename);
     yydebug         = 0; // 控制bison自带debug输出
     debug_output_id = 1; // 控制是否输出语法树时包含节点编号
+
     yyparse();
     if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER) {
         cout << '\n';
@@ -68,6 +69,7 @@ void Process(const string &filename) {
     }
     to_dot("parse_tree");
     SemanticAnalyzer analyzer(GLOBAL_PARSE_TREE);
+    analyzer.OUTPUT_VAR_LIST = true; // DEBUG输出变量列表
     if (analyzer.SemanticAnalyze()) {
         Ok("Semantic analysis completed successfully.\n");
     } else {

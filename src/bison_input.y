@@ -59,7 +59,7 @@
 %type <node_id> BType VarDecl VarDefList VarDef InitVal FuncDef FuncType InitValList
 %type <node_id> FuncFParams FuncFParam Block BlockItem BlockItemList Stmt FuncFParamDimsList
 %type <node_id> Exp Cond LVal PrimaryExp Number UnaryExp UnaryOp VarDimList ConstDimList
-%type <node_id> FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp ConstExp LValDimsOpt
+%type <node_id> FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp ConstExp LValDimsList
 
 
 %%  /* ================== 语法规则区 ================== */
@@ -384,7 +384,7 @@ Cond
 
 /* LVal → Ident {'[' Exp ']'} */
 LVal
-    : IDENT LValDimsOpt {
+    : IDENT LValDimsList {
         $$ = make_node("LVal", -1, -1, $1, $2);
     }
     | IDENT {
@@ -392,12 +392,12 @@ LVal
     }
     ;
 
-LValDimsOpt
+LValDimsList
     : LBRACK Exp RBRACK {
-        $$ = make_node("LValDimsOpt", -1, -1, $1, $2, $3);
+        $$ = make_node("LValDimsList", -1, -1, $1, $2, $3);
     }
-    | LValDimsOpt LBRACK Exp RBRACK {
-        $$ = make_node("LValDimsOpt", -1, -1, $1, $2, $3, $4);
+    | LValDimsList LBRACK Exp RBRACK {
+        $$ = make_node("LValDimsList", -1, -1, $1, $2, $3, $4);
     }
     ;
 

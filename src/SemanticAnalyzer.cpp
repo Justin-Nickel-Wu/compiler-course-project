@@ -18,7 +18,7 @@ void SemanticAnalyzer::pop_scope() {
     scope_stack.pop_back();
 }
 
-bool SemanticAnalyzer::declare_var(int type, const string &ident) {
+bool SemanticAnalyzer::declare_var(int type, const string &ident, int dims) {
     if (scope_stack.empty()) {
         cerr << "Error: No scope available to declare symbol." << endl;
         exit(1);
@@ -30,8 +30,12 @@ bool SemanticAnalyzer::declare_var(int type, const string &ident) {
         return false;
     }
 
-    SymbolInfo info(type, VAR_SYMBOL);
+    SymbolInfo info(type, VAR_SYMBOL, dims);
     current[ident] = info;
+
+    if (OUTPUT_VAR_LIST) {
+        var_list_out << "Declared variable: " << ident << ", type: " << type << ", dims: " << dims << endl;
+    }
 
     return true;
 }
@@ -49,7 +53,7 @@ SymbolInfo SemanticAnalyzer::find(const string &ident) {
 bool SemanticAnalyzer::declare_func(int return_type, const string &ident) {
     // 函数声明时一定处于全局作用域中
     auto      &current = scope_stack.front();
-    SymbolInfo info(return_type, FUNC_SYMBOL);
+    SymbolInfo info(return_type, FUNC_SYMBOL, 0);
     if (current.find(ident) != current.end()) {
         return false;
     }
@@ -105,6 +109,7 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     checkAssign(p);        // 处理赋值
     checkInitVal(p);       // 处理初始化值
     checkVarDimList(p);    // 处理数组变量定义时的维度
+    checkFuncFParam(p);    // 处理函数形参
 
     /*==状态回收==*/
     leaveNode(p);
@@ -126,17 +131,12 @@ void SemanticAnalyzer::declareFunction(int node_id) {
         GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
     }
 
-    // 处理函数声明时的形参标识符
-    if (IN_FUNC_FPARAMS_DEF && node.token_type == IDENT) {
-        func_fparams_stack.push_back({GLOBAL_VAR_TYPE, string(node.ident)});
-    }
-
     // 处理函数定义时引入的形参
     if (IN_FUNC_DEF && node.name == "Block") {
         for (auto &param : func_fparams_stack) {
-            if (!declare_var(param.first, param.second)) {
+            if (!declare_var(param.type, param.ident, param.dims)) {
                 SOMETHING_WRONG = true;
-                Err('2', node.line, "Redefinition of variable \"" + param.second + "\".");
+                Err('2', node.line, "Redefinition of variable \"" + param.ident + "\".");
             }
         }
     }
@@ -152,19 +152,15 @@ void SemanticAnalyzer::declareVariable(int node_id) {
     }
 
     // 处理变量声明时的标识符
-    if (node.name == "VarDef") {
-        int    q     = node.son[0]; // 获取标识符节点
+    if (in(node.name, {"VarDef", "ConstDef"})) { // TODO: 目前无法区分常量和变量
+        int    q     = node.son[0];              // 获取标识符节点
+        int    dims  = 0;
         string ident = AST.nodes[q].ident;
-        if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
-            SOMETHING_WRONG = true;
-            Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
-        }
-    }
 
-    if (node.name == "ConstDef") {
-        int    q     = node.son[0]; // 获取标识符节点
-        string ident = AST.nodes[q].ident;
-        if (!declare_var(GLOBAL_VAR_TYPE, ident)) { // TODO: 目前无法区分常量与变量
+        if (in(node.son.size(), {2, 4}))
+            dims = ASTInfo[node.son[1]].dims;
+
+        if (!declare_var(GLOBAL_VAR_TYPE, ident, dims)) {
             SOMETHING_WRONG = true;
             Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
         }
@@ -177,6 +173,7 @@ bool SemanticAnalyzer::checkLVal(int node_id) {
     if (node.name == "LVal") {
         string     ident = AST.nodes[node.son[0]].ident;
         SymbolInfo info  = find(ident);
+        int        dims  = node.son.size() == 2 ? ASTInfo[node.son[1]].dims : 0;
         // 使用未声明的变量
         if (info.type == -1) {
             SOMETHING_WRONG = true;
@@ -189,10 +186,19 @@ bool SemanticAnalyzer::checkLVal(int node_id) {
             Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
             return 0;
         }
+        // 数组维度过多
+        else if (info.dims < dims) {
+            SOMETHING_WRONG = true;
+            Err('7', node.line, "Array \"" + ident + "\" don't have that many dimensions.");
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = info.symbol_type;
+            return 0;
+        }
         // 正常
         else {
             ASTInfo[node_id].type        = info.type;
             ASTInfo[node_id].symbol_type = info.symbol_type;
+            ASTInfo[node_id].dims        = info.dims - dims;
         }
     }
     return 1;
@@ -269,9 +275,11 @@ bool SemanticAnalyzer::checkExp(int node_id) {
         if (son_node.token_type == INT_CONST) {
             ASTInfo[node_id].type        = INT;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            ASTInfo[node_id].dims        = 0;
         } else if (son_node.token_type == FLOAT_CONST) {
             ASTInfo[node_id].type        = FLOAT;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            ASTInfo[node_id].dims        = 0;
         }
         return 1;
     }
@@ -303,22 +311,41 @@ bool SemanticAnalyzer::checkExp(int node_id) {
 
     // 一般情况：表达式节点
     if (in(node.name, {"Exp", "ConstExp", "AddExp", "MulExp", "UnaryExp", "PrimaryExp"})) {
-        bool has_float = false;
+        bool has_float = false, has_array = false;
+        int  dims;
         for (int son_id : node.son)
             // 如果子节点已经发生了类型错误，直接返回，避免重复报错
             if (ASTInfo[son_id].type == -2) {
                 ASTInfo[node_id].type        = -2;
                 ASTInfo[node_id].symbol_type = VAR_SYMBOL;
                 return 0;
-            } else if (ASTInfo[son_id].type == FLOAT)
-                has_float = true;
+            } else {
+                if (ASTInfo[son_id].type == FLOAT)
+                    has_float = true;
+                if (ASTInfo[son_id].type == INT || ASTInfo[son_id].type == FLOAT) {
+                    dims = ASTInfo[son_id].dims;
+                    if (ASTInfo[son_id].dims > 0)
+                        has_array = true;
+                }
+            }
+
+        // 只有直接继承数组的节点才是数组类型，其他情况一定引入了运算，报错
+        if (has_array && node.son.size() > 1) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Array type cannot participate in arithmetic operations.");
+            ASTInfo[node_id].type        = -2;
+            ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            return 0;
+        }
 
         if (has_float) {
             ASTInfo[node_id].type        = FLOAT;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            ASTInfo[node_id].dims        = dims;
         } else {
             ASTInfo[node_id].type        = INT;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
+            ASTInfo[node_id].dims        = dims;
         }
     }
     return 1;
@@ -361,9 +388,17 @@ bool SemanticAnalyzer::checkAssign(int node_id) {
     // 判断赋值语句两侧类型是否匹配
     if (node.name == "Stmt" && node.son.size() == 4 && AST.nodes[node.son[1]].token_type == ASSIGN) {
         int left_type  = ASTInfo[node.son[0]].type;
+        int left_dims  = ASTInfo[node.son[0]].dims;
         int right_type = ASTInfo[node.son[2]].type;
+        int right_dims = ASTInfo[node.son[2]].dims;
 
         if (left_type == -2 || right_type == -2) return 0; // 避免重复报错
+
+        if (left_dims > 0 || right_dims > 0) {
+            SOMETHING_WRONG = true;
+            Err("11", node.line, "Cannot assign array types.");
+            return 0;
+        }
 
         if (left_type == INT && right_type == FLOAT) {
             SOMETHING_WRONG = true;
@@ -407,7 +442,7 @@ bool SemanticAnalyzer::checkInitVal(int node_id) {
 bool SemanticAnalyzer::checkVarDimList(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
-    if (in(AST.nodes[node_id].name, {"VarDimList", "ConstVarDimList"})) {
+    if (in(AST.nodes[node_id].name, {"VarDimList", "ConstDimList", "LValDimsList", "FuncFParamDimsList"})) {
         // 计算维数
         if (AST.nodes[node.son[0]].token_type == LBRACK) {
             ASTInfo[node_id].dims = 1;
@@ -429,6 +464,22 @@ bool SemanticAnalyzer::checkVarDimList(int node_id) {
             return 0;
         }
     }
+    return 1;
+}
+
+bool SemanticAnalyzer::checkFuncFParam(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+    if (node.name == "FuncFParam") {
+        const string &ident = AST.nodes[node.son[1]].ident;
+        int           dims  = 0;
+
+        if (node.son.size() == 4)
+            dims = 1;
+        if (node.son.size() == 5)
+            dims = ASTInfo[node.son[4]].dims + 1;
+        func_fparams_stack.push_back(fparamsInfo(GLOBAL_VAR_TYPE, ident, dims));
+    }
+
     return 1;
 }
 
