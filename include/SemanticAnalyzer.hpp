@@ -30,8 +30,9 @@ private:
     // 为了处理嵌套逻辑，使用类似mut方法
     int IN_LOOP, IN_FUNC_DEF, IN_FUNC_IDENT_DEF, IN_FUNC_FPARAMS_DEF;
 
-    bool SOMETHING_WRONG; // 语义分析过程中是否出错
-    int  GLOBAL_VAR_TYPE; // 当前处理的变量类型，有很多情况会使用到该变量，正确性由使用者自身保证
+    bool SOMETHING_WRONG;         // 语义分析过程中是否出错
+    int  GLOBAL_VAR_TYPE;         // 用于缓存当前声明的函数或是变量的类型。有很多情况会使用到该变量，即用即弃，正确性由使用者自身保证
+    int  GLOBAL_FUNC_RETURN_TYPE; // 用于缓存当前函数的返回值类型
 
     vector<pair<int, string>>                 func_fparams_stack; // 函数形参栈
     vector<unordered_map<string, SymbolInfo>> scope_stack;        // 符号表栈
@@ -58,6 +59,7 @@ private:
     bool checkBreakContinue(int node_id); // 处理break和continue语句
     int  checkFuncCall(int node_id);      // 处理函数调用，若有效则返回函数返回值类型的token，否则返回0
     bool checkEXP(int node_id);           // 处理表达式节点
+    bool checkReturn(int node_id);        // 处理return语句节点
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明
     void enterNode(int node_id);          // 进入节点时的处理

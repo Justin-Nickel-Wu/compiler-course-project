@@ -89,9 +89,8 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     enterNode(p);
 
     /*==语义提取==*/
-    declareVariable(p);    // 处理变量声明
-    declareFunction(p);    // 处理函数声明
-    checkBreakContinue(p); // 处理break和continue语句
+    declareVariable(p); // 处理变量声明
+    declareFunction(p); // 处理函数声明
 
     /*==递归遍历==*/
     for (int son_id : node.son) {
@@ -99,8 +98,10 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     }
 
     /*==维护类型==*/
-    checkLVal(p); // 处理变量使用 (Val)
-    checkEXP(p);  // 处理表达式节点
+    checkBreakContinue(p); // 处理break和continue语句
+    checkLVal(p);          // 处理变量使用 (Val)
+    checkEXP(p);           // 处理表达式节点
+    checkReturn(p);        // 处理return语句节点
 
     /*==状态回收==*/
     leaveNode(p);
@@ -311,6 +312,37 @@ bool SemanticAnalyzer::checkEXP(int node_id) {
     return 1;
 }
 
+bool SemanticAnalyzer::checkReturn(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == RETURN) {
+        if (node.son.size() == 2) {
+            if (GLOBAL_FUNC_RETURN_TYPE != VOID) {
+                SOMETHING_WRONG = true;
+                Err("10", node.line, "Return a value in a void function.");
+                return 0;
+            }
+        } else {
+            int Exp_type = ASTInfo[node.son[1]].type;
+
+            if (Exp_type == -2) return 0; // 避免重复报错
+
+            if (GLOBAL_FUNC_RETURN_TYPE == VOID) {
+                SOMETHING_WRONG = true;
+                Err("10", node.line, "Return nothing in a non-void function.");
+                return 0;
+            }
+
+            if (Exp_type == FLOAT && GLOBAL_FUNC_RETURN_TYPE == INT) {
+                SOMETHING_WRONG = true;
+                Err("10", node.line, "Return float in an int function.");
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
 void SemanticAnalyzer::enterNode(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
@@ -331,7 +363,8 @@ void SemanticAnalyzer::enterNode(int node_id) {
 
     // 进入函数标识符定义
     if (node.name == "FuncType") {
-        GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
+        GLOBAL_VAR_TYPE         = AST.nodes[node.son[0]].token_type;
+        GLOBAL_FUNC_RETURN_TYPE = GLOBAL_VAR_TYPE;
         ++IN_FUNC_IDENT_DEF;
     }
 
