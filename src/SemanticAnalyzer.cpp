@@ -110,6 +110,7 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     checkInitVal(p);       // 处理初始化值
     checkVarDimList(p);    // 处理数组变量定义时的维度
     checkFuncFParam(p);    // 处理函数形参
+    checkFuncRParams(p);   // 处理函数实参
 
     /*==状态回收==*/
     leaveNode(p);
@@ -246,6 +247,30 @@ int SemanticAnalyzer::checkFuncCall(int node_id) {
         Err('5', node.line, "\"" + string(son_node.ident) + "\" is a variable, not a function.");
         return 0;
     }
+
+    // 检查参数数量
+    int rparams_cnt = node.son.size() == 3 ? 0 : ASTInfo[node.son[2]].func_rparams.size();
+    if (info.func_params.size() != rparams_cnt) {
+        SOMETHING_WRONG = true;
+        Err('9', node.line, "Function \"" + string(son_node.ident) + "\" called with incorrect number of arguments.");
+        return 0;
+    }
+
+    for (int i = 0; i < info.func_params.size(); i++) {
+        // 参数类型不匹配
+        if (info.func_params[i].first != ASTInfo[node.son[2]].func_rparams[i].first) {
+            SOMETHING_WRONG = true;
+            Err("9", node.line, "Type mismatch for argument in function call \"" + string(son_node.ident) + "\".");
+            return 0;
+        }
+        // 参数维度不匹配
+        if (info.func_params[i].second != ASTInfo[node.son[2]].func_rparams[i].second) {
+            SOMETHING_WRONG = true;
+            Err("9", node.line, "Dimension mismatch for argument in function call \"" + string(son_node.ident) + "\".");
+            return 0;
+        }
+    }
+
     return info.type;
 }
 
@@ -493,6 +518,20 @@ bool SemanticAnalyzer::checkFuncFParam(int node_id) {
         func_fparams_stack.push_back(fparamsInfo(GLOBAL_VAR_TYPE, ident, dims));
     }
 
+    return 1;
+}
+
+bool SemanticAnalyzer::checkFuncRParams(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    if (node.name == "FuncRParams") {
+        if (node.son.size() == 1) {
+            ASTInfo[node_id].func_rparams.push_back({ASTInfo[node.son[0]].type, ASTInfo[node.son[0]].dims});
+        } else {
+            ASTInfo[node_id].func_rparams = ASTInfo[node.son[0]].func_rparams;
+            ASTInfo[node_id].func_rparams.push_back({ASTInfo[node.son[2]].type, ASTInfo[node.son[2]].dims});
+        }
+    }
     return 1;
 }
 

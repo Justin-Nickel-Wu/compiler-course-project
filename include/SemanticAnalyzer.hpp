@@ -46,9 +46,10 @@ private:
     vector<unordered_map<string, SymbolInfo>> scope_stack;        // 符号表栈
 
     struct ASTInfoNode {
-        int        type;        // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
-        SymbolType symbol_type; // 标识符的类型，使用enum SymbolType
-        int        dims;        // 数组维度，-1表示维度错误，0表示非数组
+        int                    type;         // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
+        SymbolType             symbol_type;  // 标识符的类型，使用enum SymbolType
+        int                    dims;         // 数组维度，-1表示维度错误，0表示非数组
+        vector<pair<int, int>> func_rparams; // 函数实参列表，存储每个参数的类型和维度
 
         ASTInfoNode() : type(-1) {}
     };
@@ -72,6 +73,7 @@ private:
     bool checkInitVal(int node_id);       // 处理初始化值
     bool checkVarDimList(int node_id);    // 处理数组变量定义时的维度
     bool checkFuncFParam(int node_id);    // 处理函数形参
+    bool checkFuncRParams(int node_id);   // 处理函数实参
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明
     void enterNode(int node_id);          // 进入节点时的处理
