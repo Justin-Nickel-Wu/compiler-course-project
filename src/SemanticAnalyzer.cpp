@@ -57,8 +57,7 @@ bool SemanticAnalyzer::declare_func(int return_type, const string &ident) {
     return true;
 }
 
-bool SemanticAnalyzer::SemanticAnalyze() {
-    // 初始化全局变量与全局作用域。
+void SemanticAnalyzer::init() {
     SOMETHING_WRONG = false;
     IN_LOOP = 0;
     IN_FUNC_DEF = 0;
@@ -66,7 +65,14 @@ bool SemanticAnalyzer::SemanticAnalyze() {
     IN_FUNC_FPARAMS_DEF = 0;
     GLOBAL_VAR_TYPE = -1;
     scope_stack.clear();
-    push_scope();
+
+    ASTInfo.clear();
+    ASTInfo.resize(AST.nodes.size());
+}
+
+bool SemanticAnalyzer::SemanticAnalyze() {
+    init();
+    push_scope(); // 全局作用域。
 
     SemanticAnalyzeDFS(AST.get_root());
 
@@ -122,22 +128,6 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
         if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
             SOMETHING_WRONG = true;
             Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
-        }
-    }
-
-    // 处理变量使用
-    if (node.name == "LVal") {
-        string ident = AST.nodes[node.son[0]].ident;
-        SymbolInfo info = find(ident);
-        // 使用未声明的变量
-        if (info.type == -1) {
-            SOMETHING_WRONG = true;
-            Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
-        }
-        // 将函数当作变量使用
-        else if (info.symbol_type == FUNC_SYMBOL) {
-            SOMETHING_WRONG = true;
-            Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
         }
     }
 
@@ -201,6 +191,11 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
         SemanticAnalyzeDFS(son_id);
     }
 
+    /*-------------------维护类型-------------------*/
+    // 处理变量使用 (Val)
+    if (node.name == "LVal")
+        pocess_LVal(p);
+
     /*-------------------状态回收-------------------*/
     // 离开作用域
     if (node.name == "Block") {
@@ -225,5 +220,27 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     // 离开函数形参定义
     if (node.name == "FuncFParams") {
         --IN_FUNC_FPARAMS_DEF;
+    }
+}
+
+void SemanticAnalyzer::pocess_LVal(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    string ident = AST.nodes[node.son[0]].ident;
+    SymbolInfo info = find(ident);
+    // 使用未声明的变量
+    if (info.type == -1) {
+        SOMETHING_WRONG = true;
+        Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
+    }
+    // 将函数当作变量使用
+    else if (info.symbol_type == FUNC_SYMBOL) {
+        SOMETHING_WRONG = true;
+        Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
+    }
+    // 正常
+    else {
+        ASTInfo[node_id].type = info.type;
+        ASTInfo[node_id].symbol_type = info.symbol_type;
     }
 }
