@@ -145,7 +145,7 @@ void SemanticAnalyzer::declareVariable(int node_id) {
     const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理声明变量时的类型
-    if (node.name == "BType") {
+    if (node.name == "BType") {        // 只有定义函数或者变量时会出现BType，且两者不会冲突
         int q           = node.son[0]; // 获取类型节点
         GLOBAL_VAR_TYPE = AST.nodes[q].token_type;
     }
@@ -155,6 +155,15 @@ void SemanticAnalyzer::declareVariable(int node_id) {
         int    q     = node.son[0]; // 获取标识符节点
         string ident = AST.nodes[q].ident;
         if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
+            SOMETHING_WRONG = true;
+            Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
+        }
+    }
+
+    if (node.name == "ConstDef") {
+        int    q     = node.son[0]; // 获取标识符节点
+        string ident = AST.nodes[q].ident;
+        if (!declare_var(GLOBAL_VAR_TYPE, ident)) { // TODO: 目前无法区分常量与变量
             SOMETHING_WRONG = true;
             Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
         }
@@ -292,7 +301,7 @@ bool SemanticAnalyzer::checkExp(int node_id) {
     }
 
     // 一般情况：表达式节点
-    if (in(node.name, {"Exp", "AddExp", "MulExp", "UnaryExp", "PrimaryExp"})) {
+    if (in(node.name, {"Exp", "ConstExp", "AddExp", "MulExp", "UnaryExp", "PrimaryExp"})) {
         bool has_float = false;
         for (int son_id : node.son)
             // 如果子节点已经发生了类型错误，直接返回，避免重复报错
@@ -363,7 +372,7 @@ bool SemanticAnalyzer::checkAssign(int node_id) {
     }
 
     // 判断变量初始化时的两侧类型是否匹配
-    if (node.name == "VarDef" && (node.son.size() == 3 || node.son.size() == 4)) {
+    if (in(node.name, {"VarDef", "ConstDef"}) && in(node.son.size(), {3, 4})) {
         int left_type  = GLOBAL_VAR_TYPE; // 此时GLOBAL_VAR_TYPE变量一定还是有效的
         int right_type = ASTInfo[node.son[node.son.size() - 1]].type;
 
@@ -384,8 +393,8 @@ bool SemanticAnalyzer::checkInitVal(int node_id) {
 
     // 处理初始化值
     // TODO: 识别是不是数组
-    if (node.name == "InitVal") {
-        if (node.son.size() == 1 && AST.nodes[node.son[0]].name == "Exp") {
+    if (in(node.name, {"InitVal", "ConstInitVal"})) {
+        if (node.son.size() == 1) {
             ASTInfo[node_id].type        = ASTInfo[node.son[0]].type;
             ASTInfo[node_id].symbol_type = VAR_SYMBOL;
         }
