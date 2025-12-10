@@ -85,51 +85,29 @@ bool SemanticAnalyzer::SemanticAnalyze() {
 void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     ParseTreeNode &node = AST.nodes[p];
 
-    /*-------------------状态处理-------------------*/
-    // 进入新作用域
-    if (node.name == "Block") {
-        push_scope();
+    /*==状态处理==*/
+    enterNode(p);
+
+    /*==语义提取==*/
+    declareVariable(p);    // 处理变量声明
+    declareFunction(p);    // 处理函数声明
+    checkFuncCall(p);      // 处理函数调用
+    checkBreakContinue(p); // 处理break和continue语句
+
+    /*==递归遍历==*/
+    for (int son_id : node.son) {
+        SemanticAnalyzeDFS(son_id);
     }
 
-    // 进入循环体
-    if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
-        ++IN_LOOP;
-    }
+    /*==维护类型==*/
+    checkLVal(p); // 处理变量使用 (Val)
 
-    // 进入函数定义
-    if (node.name == "FuncDef") {
-        ++IN_FUNC_DEF;
-    }
+    /*==状态回收==*/
+    leaveNode(p);
+}
 
-    // 进入函数标识符定义
-    if (node.name == "FuncType") {
-        GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
-        ++IN_FUNC_IDENT_DEF;
-    }
-
-    // 进入函数形参定义
-    if (node.name == "FuncFParams") {
-        if (IN_FUNC_FPARAMS_DEF == 0) // 第一次使用确保清空，可能不必要
-            func_fparams_stack.clear();
-        ++IN_FUNC_FPARAMS_DEF;
-    }
-
-    /*-------------------语义提取-------------------*/
-    // 处理声明变量时的类型
-    if (node.name == "BType") {
-        int q = node.son[0]; // 获取类型节点
-        GLOBAL_VAR_TYPE = AST.nodes[q].token_type;
-    }
-
-    // 处理变量声明时的标识符
-    if (node.name == "VarDef") {
-        int q = node.son[0]; // 获取标识符节点
-        string ident = AST.nodes[q].ident;
-        if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
-            SOMETHING_WRONG = true;
-            Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
-        }
-    }
+void SemanticAnalyzer::declareFunction(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理函数声明时的标识符
     if (IN_FUNC_IDENT_DEF && node.token_type == IDENT) {
@@ -158,6 +136,64 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
             }
         }
     }
+}
+
+void SemanticAnalyzer::declareVariable(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 处理声明变量时的类型
+    if (node.name == "BType") {
+        int q = node.son[0]; // 获取类型节点
+        GLOBAL_VAR_TYPE = AST.nodes[q].token_type;
+    }
+
+    // 处理变量声明时的标识符
+    if (node.name == "VarDef") {
+        int q = node.son[0]; // 获取标识符节点
+        string ident = AST.nodes[q].ident;
+        if (!declare_var(GLOBAL_VAR_TYPE, ident)) {
+            SOMETHING_WRONG = true;
+            Err('2', node.line, "Redefinition of variable \"" + ident + "\".");
+        }
+    }
+}
+
+void SemanticAnalyzer::checkLVal(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    if (node.name == "LVal") {
+        string ident = AST.nodes[node.son[0]].ident;
+        SymbolInfo info = find(ident);
+        // 使用未声明的变量
+        if (info.type == -1) {
+            SOMETHING_WRONG = true;
+            Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
+        }
+        // 将函数当作变量使用
+        else if (info.symbol_type == FUNC_SYMBOL) {
+            SOMETHING_WRONG = true;
+            Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
+        }
+        // 正常
+        else {
+            ASTInfo[node_id].type = info.type;
+            ASTInfo[node_id].symbol_type = info.symbol_type;
+        }
+    }
+}
+
+void SemanticAnalyzer::checkBreakContinue(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 处理break和continue语句
+    if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
+        SOMETHING_WRONG = true;
+        Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+    }
+}
+
+void SemanticAnalyzer::checkFuncCall(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
 
     // 处理函数调用
     if (node.name == "UnaryExp") {
@@ -176,27 +212,43 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
             }
         }
     }
+}
 
-    // 处理break和continue语句
-    if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
-        SOMETHING_WRONG = true;
-        Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+void SemanticAnalyzer::enterNode(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    // 进入新作用域
+    if (node.name == "Block") {
+        push_scope();
     }
 
-    // TODO: 其他语义分析逻辑
-
-    /*-------------------递归遍历-------------------*/
-    // 递归处理子节点
-    for (int son_id : node.son) {
-        SemanticAnalyzeDFS(son_id);
+    // 进入循环体
+    if (node.name == "Stmt" && AST.nodes[node.son[0]].token_type == WHILE) {
+        ++IN_LOOP;
     }
 
-    /*-------------------维护类型-------------------*/
-    // 处理变量使用 (Val)
-    if (node.name == "LVal")
-        pocess_LVal(p);
+    // 进入函数定义
+    if (node.name == "FuncDef") {
+        ++IN_FUNC_DEF;
+    }
 
-    /*-------------------状态回收-------------------*/
+    // 进入函数标识符定义
+    if (node.name == "FuncType") {
+        GLOBAL_VAR_TYPE = AST.nodes[node.son[0]].token_type;
+        ++IN_FUNC_IDENT_DEF;
+    }
+
+    // 进入函数形参定义
+    if (node.name == "FuncFParams") {
+        if (IN_FUNC_FPARAMS_DEF == 0) // 第一次使用确保清空，可能不必要
+            func_fparams_stack.clear();
+        ++IN_FUNC_FPARAMS_DEF;
+    }
+}
+
+void SemanticAnalyzer::leaveNode(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
     // 离开作用域
     if (node.name == "Block") {
         pop_scope();
@@ -220,27 +272,5 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     // 离开函数形参定义
     if (node.name == "FuncFParams") {
         --IN_FUNC_FPARAMS_DEF;
-    }
-}
-
-void SemanticAnalyzer::pocess_LVal(int node_id) {
-    const ParseTreeNode &node = AST.nodes[node_id];
-
-    string ident = AST.nodes[node.son[0]].ident;
-    SymbolInfo info = find(ident);
-    // 使用未声明的变量
-    if (info.type == -1) {
-        SOMETHING_WRONG = true;
-        Err('1', node.line, "Use of undeclared variable \"" + ident + "\".");
-    }
-    // 将函数当作变量使用
-    else if (info.symbol_type == FUNC_SYMBOL) {
-        SOMETHING_WRONG = true;
-        Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
-    }
-    // 正常
-    else {
-        ASTInfo[node_id].type = info.type;
-        ASTInfo[node_id].symbol_type = info.symbol_type;
     }
 }

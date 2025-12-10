@@ -1,18 +1,12 @@
-/bin
 /obj
 /output
 /.vscode
 /generated
-
-in.txt
-input.txt
-out_example.txt
-out.txt
-.DS_Store
 /docs
 
-/test
-/mytest
 
+sysy
+input.txt
+.DS_Store
 *.dSYM
 .clang-format

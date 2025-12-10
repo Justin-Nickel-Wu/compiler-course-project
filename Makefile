@@ -1,12 +1,11 @@
 # 编译器
-CXX     = g++
+CXX      = g++
 CXXFLAGS = -Iinclude -Igenerated -Wall -g
 
 # 目录
 SRC_DIR = src
 GEN_DIR = generated
 OBJ_DIR = obj
-BIN_DIR = bin
 OUTPUT_DIR = output
 
 # 输入文件
@@ -18,7 +17,7 @@ SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 BISON_C = $(GEN_DIR)/bison.cpp
 BISON_H = $(GEN_DIR)/bison.hpp
 LEXER_C = $(GEN_DIR)/lexer.cpp
-TARGET  = $(BIN_DIR)/compiler
+TARGET  = ./sysy
 
 # 把 src/*.cpp 映射为 obj/*.o
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
@@ -30,6 +29,8 @@ OBJS = $(OBJ_DIR)/bison_input.tab.o \
 
 # 默认目标
 all: $(TARGET)
+
+	@mkdir -p $(OUTPUT_DIR)
 
 # ======== 生成 Bison 文件：tab.c + tab.h ========
 $(BISON_C) $(BISON_H): $(BISON_SRC)
@@ -58,12 +59,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(BISON_H)
 
 # ======== 链接 ========
 $(TARGET): $(OBJS)
-	@mkdir -p $(BIN_DIR)
 	$(CXX) $(OBJS) -o $(TARGET)
 
 # ======== 清理 ========
 clean:
-	rm -rf $(OBJ_DIR) $(GEN_DIR) $(BIN_DIR) $(OUTPUT_DIR)
+	rm -rf $(OBJ_DIR) $(GEN_DIR) $(BIN_DIR) $(OUTPUT_DIR) $(TARGET)
 
 
 run: all
@@ -71,5 +71,4 @@ run: all
 		echo "Usage: make run FILE=your_input_file"; \
 		exit 1; \
 	fi
-	@mkdir -p $(OUTPUT_DIR)
 	@$(TARGET) $(FILE)
