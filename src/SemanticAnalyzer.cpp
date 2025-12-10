@@ -89,7 +89,6 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     enterNode(p);
 
     /*==语义提取==*/
-    declareVariable(p); // 处理变量声明
     declareFunction(p); // 处理函数声明
 
     /*==递归遍历==*/
@@ -98,12 +97,14 @@ void SemanticAnalyzer::SemanticAnalyzeDFS(int p) {
     }
 
     /*==维护类型==*/
+    declareVariable(p);    // 处理变量声明
     checkBreakContinue(p); // 处理break和continue语句
     checkLVal(p);          // 处理变量使用 (Val)
     checkExp(p);           // 处理表达式节点
     checkReturn(p);        // 处理return语句节点
     checkAssign(p);        // 处理赋值
     checkInitVal(p);       // 处理初始化值
+    checkVarDimList(p);    // 处理数组变量定义时的维度
 
     /*==状态回收==*/
     leaveNode(p);
@@ -400,6 +401,34 @@ bool SemanticAnalyzer::checkInitVal(int node_id) {
         }
     }
 
+    return 1;
+}
+
+bool SemanticAnalyzer::checkVarDimList(int node_id) {
+    const ParseTreeNode &node = AST.nodes[node_id];
+
+    if (in(AST.nodes[node_id].name, {"VarDimList", "ConstVarDimList"})) {
+        // 计算维数
+        if (AST.nodes[node.son[0]].token_type == LBRACK) {
+            ASTInfo[node_id].dims = 1;
+        } else {
+            if (ASTInfo[node.son[0]].dims == -1) { // 子节点维度错误，避免重复报错
+                ASTInfo[node_id].dims = -1;
+                return 0;
+            }
+            ASTInfo[node_id].dims = ASTInfo[node.son[0]].dims + 1;
+        }
+
+        int Exp_type = ASTInfo[node.son[AST.nodes[node.son[0]].token_type == LBRACK ? 1 : 2]].type;
+        if (Exp_type == -2) return 0; // 避免重复报错
+
+        if (Exp_type != INT) {
+            ASTInfo[node_id].dims = -1;
+            SOMETHING_WRONG       = true;
+            Err('7', node.line, "Array size must be an integer.");
+            return 0;
+        }
+    }
     return 1;
 }
 

@@ -40,7 +40,7 @@ private:
     struct ASTInfoNode {
         int        type;        // 数值的类型，使用词法token -1:不需要类型信息 -2:类型错误
         SymbolType symbol_type; // 标识符的类型，使用enum SymbolType
-        int        dims;        // 数组维度
+        int        dims;        // 数组维度，-1表示维度错误，0表示非数组
 
         ASTInfoNode() : type(-1) {}
     };
@@ -62,6 +62,7 @@ private:
     bool checkReturn(int node_id);        // 处理return语句节点
     bool checkAssign(int node_id);        // 处理赋值
     bool checkInitVal(int node_id);       // 处理初始化值
+    bool checkVarDimList(int node_id);    // 处理数组变量定义时的维度
     void declareFunction(int node_id);    // 处理函数声明
     void declareVariable(int node_id);    // 处理变量声明
     void enterNode(int node_id);          // 进入节点时的处理
