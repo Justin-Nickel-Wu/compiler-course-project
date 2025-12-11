@@ -56,7 +56,7 @@ void part2_test(string filename) {
 void Process(const string &filename) {
     set_input_file(filename);
     yydebug         = 0; // 控制bison自带debug输出
-    debug_output_id = 1; // 控制是否输出语法树时包含节点编号
+    debug_output_id = 0; // 控制是否输出语法树时包含节点编号
 
     yyparse();
     if (WRONG_FOUND_IN_LEXER || WRONG_FOUND_IN_PARSER) {

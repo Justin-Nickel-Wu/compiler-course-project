@@ -146,7 +146,7 @@ void SemanticAnalyzer::declareFunction(int node_id) {
                 Err('2', node.line, "Redefinition of variable \"" + param.ident + "\".");
             }
         }
-
+        func_fparams_stack.clear(); // 记得清空
         // 更新这个函数定义
         auto &current              = scope_stack.front();
         current[GLOBAL_FUNC_IDENT] = func_info;
