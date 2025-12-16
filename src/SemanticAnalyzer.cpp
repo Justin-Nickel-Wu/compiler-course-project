@@ -197,6 +197,16 @@ bool SemanticAnalyzer::checkLVal(int node_id) {
             Err('6', node.line, "\"" + ident + "\" is a function, not a variable.");
             return 0;
         }
+        // 将非数组变量当作数组使用
+        else if (info.dims == 0 && dims > 0) {
+            if (dims > 0) {
+                SOMETHING_WRONG = true;
+                Err('8', node.line, "Variable \"" + ident + "\" is not an array.");
+                ASTInfo[node_id].type        = -2;
+                ASTInfo[node_id].symbol_type = info.symbol_type;
+                return 0;
+            }
+        }
         // 数组维度过多
         else if (info.dims < dims) {
             SOMETHING_WRONG = true;
@@ -221,7 +231,10 @@ bool SemanticAnalyzer::checkBreakContinue(int node_id) {
     // 处理break和continue语句
     if (!IN_LOOP && (node.token_type == BREAK || node.token_type == CONTINUE)) {
         SOMETHING_WRONG = true;
-        Err('3', node.line, "\"break\" or \"continue\" statement not within a loop.");
+        if (node.token_type == BREAK)
+            Err("12", node.line, "\"break\" statement not within a loop.");
+        else
+            Err("13", node.line, "\"continue\" statement not within a loop.");
         return 0;
     }
     return 1;

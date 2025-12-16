@@ -8,6 +8,7 @@
 
 sysy
 input.txt
+input.c
 .DS_Store
 *.dSYM
 .clang-format
